@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>F1 Overlay</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <style>
+        .s-block {
+            background:rgba(0,0,0,0.9);
+            color:white;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            box-sizing:border-box;
+            width:80%;
+            height:90%;
+            border-bottom-right-radius:50px;
+            position:relative;
+            flex-direction:column
+        }
+
+        #app {
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            width:100vw
+        }
+
+        .s-grid {
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            align-items:center;
+            flex-grow:1;
+            width:100%;
+            padding:0 1em;
+            align-content:center
+        }
+
+        .s-title {
+            font-weight:700;
+            font-size:82px;
+            text-transform:uppercase;
+            font-variant-ligatures:none;
+            padding:.2em 0;
+            flex-shrink: 0;
+            margin-top: 10px;
+        }
+
+        .s {
+            display:flex;
+            flex-direction:column;
+            font-size:38px;
+            justify-content:center;
+            align-items:center;
+            text-align:center;
+            max-width:20vw;
+            margin:0 1em
+        }
+
+        .s-image {
+            width:5em;
+            height:3em;
+            background-size:contain;
+            background-position:center;
+            background-repeat:no-repeat;
+            margin:.5em 0
+        }
+
+        .s-slot {
+            font-size:.5em
+        }
+
+        .s-name {
+            height: 3em
+        }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <div class="s-block">
+        <div class="s-title">Sponsors</div>
+        <div class="s-grid">
+            <div class="s" v-for="sponsor in sponsors">
+                <div class="s-slot">{{ sponsor.slot_proper || sponsor.slot }}</div>
+                <div class="s-image" v-if="sponsor.logo" :style="bgWrap(sponsor.logo)"></div>
+                <div class="s-name">{{ sponsor.name }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = new io();
+
+    const app = new Vue({
+        el: "#app",
+        data: {
+            settings: {},
+        },
+        computed: {
+            sponsors() {
+                if (!this.settings || !this.settings.sponsorData) return [];
+                return this.settings.sponsorData;
+            }
+        },
+        methods: {
+            bgWrap(url) {
+                return {backgroundImage: `url(${url})`}
+            },
+        }
+    })
+
+    socket.on("connect", () => {
+        console.log("connected to websocket!");
+        socket.emit("subscribe", "settings");
+    })
+    socket.on("settings", (settings) => { app.settings = settings; })
+</script>
+</body>
+</html>

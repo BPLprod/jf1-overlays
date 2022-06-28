@@ -100,11 +100,12 @@
             <div class="s-cell s-cell-team">Team</div>
             <div class="s-cell s-cell-best-lap">Best Lap</div>
             <div class="s-cell s-cell-time">Time</div>
+            <div class="s-cell s-cell-time">Interval</div>
             <div class="s-cell s-cell-penalties">Penalties</div>
             <div class="s-cell s-cell-points">Points</div>
 
         </div>
-        <standing v-for="car in standings" :car="car" :key="car.carI"></standing>
+        <standing v-for="(car, i) in standings" :car="car" :key="car.carI" :car-above="i === 0 ? null : standings[i - 1]"></standing>
     </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
@@ -149,7 +150,7 @@
                 return `${s}.${this.zeroPad(sr, 3)}`
             },
             zeroPad(num, size) {
-                return Math.floor(Math.abs(num)).toString().padStart(size, "0").slice(0, size);
+                return Math.floor(Math.abs(num)).toString().padStart(size, "0")//.slice(0, slice);
             },
             parseDiff(ms) {
                 let [s, sr] = [Math.floor(Math.abs(ms) / 1000), Math.abs(ms) % 1000]
@@ -159,15 +160,55 @@
         components: {
             "standing": {
                 name: "Standing",
-                props: ["car"],
+                props: ["car", "carAbove"],
+                methods: {
+                    getTimeDiff(opponent, againstP1) {
+                        if (this.car.status) return "";
+                        let totalTime = this.car.m_totalRaceTime + this.car.m_penaltiesTime;
+
+                        if (this.car.m_position === 1) {
+                            return againstP1 ?  this.$root.msToHMS(totalTime * 1000) : "";
+                        }
+
+
+                        if (opponent.m_numLaps !== this.car.m_numLaps) {
+                            // Different number of laps from the comparison
+                            return `Lap ${this.car.m_numLaps}`;
+                        }
+                        return this.$root.parseDiff((totalTime - (opponent.m_totalRaceTime + opponent.m_penaltiesTime)) * 1000);
+
+
+                    }
+                },
                 computed: {
-                    timeDiff() {
+                    timeDiffP1() {
+                        // if (this.car.m_position === 1) return this.$root.msToHMS(time * 1000);
+                        return this.getTimeDiff(this.$root.P1, true);
+
                         if (this.car.status) return "";
                         let time = this.car.m_totalRaceTime + this.car.m_penaltiesTime
                         if (this.car.m_position === 1) return this.$root.msToHMS(time * 1000);
                         let P1 = this.$root.P1;
                         if (P1.m_numLaps === this.car.m_numLaps) {
                             // time diff
+                            console.log(`[time diff] P${this.car.m_position}`, time - P1.m_totalRaceTime)
+                            return this.$root.parseDiff((time - P1.m_totalRaceTime) * 1000)
+                        } else {
+                            // lap diff
+                            let lapDiff = P1.m_numLaps - this.car.m_numLaps
+                            return `+${lapDiff} lap${lapDiff === 1 ? '' : 's'}`
+                        }
+                    },
+                    timeDiffAbove() {
+                        return this.getTimeDiff(this.carAbove, false);
+
+                        if (this.car.status) return "";
+                        let time = this.car.m_totalRaceTime + this.car.m_penaltiesTime
+                        if (this.car.m_position === 1) return this.$root.msToHMS(time * 1000);
+                        let P1 = this.$root.P1;
+                        if (P1.m_numLaps === this.car.m_numLaps) {
+                            // time diff
+                            console.log(`[time diff] P${this.car.m_position}`, time - P1.m_totalRaceTime)
                             return this.$root.parseDiff((time - P1.m_totalRaceTime) * 1000)
                         } else {
                             // lap diff
@@ -182,10 +223,11 @@
                     <div class="s-stripe" :style="{backgroundColor: car.carData.team.color}"></div>
                     <div class="s-name">{{ car.carData.name }}</div>
                 </div>
-                <div class="s-cell s-cell-team">{{ car.carData.team.name }}</div>
+                <div class="s-cell s-cell-team">{{ car.carData.team.shortName || car.carData.team.name }}</div>
                 <div class="s-cell s-cell-best-lap" :class="{'fastest': car._fastest}">{{ $root.msToHMS(car.m_bestLapTimeInMS) }}</div>
 <!--                <div class="s-cell s-laps">{{ car.m_numLaps }}</div>-->
-                <div class="s-cell s-cell-time">{{ timeDiff }}</div>
+                <div class="s-cell s-cell-time">{{ timeDiffP1 }}</div>
+                <div class="s-cell s-cell-time">{{ timeDiffAbove }}</div>
                 <div class="s-cell s-cell-penalties">
                     {{ car.m_numPenalties ? \`+\${car.m_penaltiesTime}s\ (x\${car.m_numPenalties})\` : '' }}
                 </div>

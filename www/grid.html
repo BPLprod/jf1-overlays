@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>F1 Overlay</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <style>
+
+        #starting-grid {
+            background: rgba(0,0,0,0.9);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            width: 80%;
+            height: 90%;
+            border-bottom-right-radius: 50px;
+            position: relative;
+        }
+
+        #app {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        .car:nth-child(2) {
+            order: 3;
+        }
+        .car {
+            width: 100%;
+            height: 100%;
+        }
+
+        .car-livery {
+            background-image: url(https://cdn.discordapp.com/attachments/485493459357007876/965749757089832960/bpl-f1.png);
+        }
+        .car {display: flex;flex-direction: column;}
+
+        .car-row {display: flex;}
+
+        .car-livery {width: 100%;height: 190px;background-size: contain;background-repeat: no-repeat;margin: 0 10px;}
+
+        .car {max-width: 600px;}
+
+        .car-name {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            justify-content: flex-end;
+            margin: 0 20px;}
+
+        .car-top {
+            font-size: 48px;
+            font-weight: bold;
+            margin-top: 10px;}
+
+        .car:last-child .car-top {
+            flex-direction: row-reverse;
+        }
+
+        .car:last-child .car-name {
+            justify-content: flex-start;
+        }
+
+        .car-images {
+            flex-grow: 1;
+        }
+
+        .car:last-child .car-livery {
+            transform: scaleX(-1);
+        }
+        .car-headshot {
+            background-image: url(https://dl.airtable.com/.attachmentThumbnails/fb36c4209fdd2cfa7b5a657771fa7904/416d99a1);
+        }
+        .car-team-logo {
+            background-image: url("https://data.slmn.gg/image?size=orig&url=https://dl.airtable.com/.attachments/78a7e9810fb7c2b35110d7b3a6250262/1e17ce83/ClownSchoolLogonobg-AaronPlace.png");
+        }
+        .car-headshot {width: 100%;height: 100%;background-size: contain;background-repeat: no-repeat;background-position: bottom;margin:  0;}
+
+        .car-team-logo {position: absolute;right: 20px;bottom: 20px;width: 140px;height: 130px;background-size: contain;background-repeat: no-repeat;background-position: center;}
+
+        .car-images {position: relative;}
+        .car-team-name {font-size: 32px;font-weight: bold;text-align: center;width: 100%;padding: 10px;min-height: 3.25em;display: flex;justify-content: center;align-items: center;}
+        .sponsor-race-name {font-size: 96px;text-align: center;display: flex;justify-content: center;align-items: center;flex-direction: column;}
+
+        .spon-logo {width: 6em;height: 3em;background-size: contain;background-position: center;background-repeat: no-repeat;margin-bottom: .5em;}
+
+        .spon-text {margin-bottom: .5em;padding: 0 .5em;}
+        .sponsor-name {font-weight: bold;display: flex;justify-content: center;align-items: center;text-align: center;width: 100%;font-size: 24px;}
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <div id="starting-grid">
+        <transition name="swipe-up" mode="out-in">
+            <div class="row" :key="rowIndex">
+                <car v-for="(car, i) in activeRow" :car="car" :class="{'right': i === 1}"></car>
+            </div>
+        </transition>
+        <transition name="swipe-up">
+            <div class="sponsor-race-name" v-if="rowIndex === -1 && sponsor" key="sponsor">
+                <div class="spon-logo" :style="bgWrap(sponsor.logo)"></div>
+                <div class="spon-text">{{ sponsor.context_name }}</div>
+            </div>
+            <div class="sponsor-race-name" v-if="rowIndex === -1 && !sponsor" key="sponsor">
+                <div class="spon-text">{{ trackName }} Grand Prix</div>
+            </div>
+        </transition>
+
+<!--        <div class="small-grid">GRID</div>-->
+    </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/shared.js"></script>
+<script>
+    const socket = new io();
+
+    const app = new Vue({
+        el: "#app",
+        data: {
+            finalClassification: [],
+            leaderboardData: [],
+            rowIndex: -1,
+            rowTime: null,
+            rowMaxTime: 55000,
+            settings: {},
+            session: {},
+            active: false,
+        },
+        mounted() {
+            window.addEventListener("obsSourceActiveChanged", (e) => {
+                this.active = e.detail.active;
+            });
+        },
+        computed: {
+            sponsor() {
+                if (!this.settings || !this.settings.sponsorData) return null;
+                return this.settings.sponsorData.find(s => s.slot === "race_title");
+            },
+            poleSponsor() {
+                if (!this.settings || !this.settings.sponsorData) return null;
+                return this.settings.sponsorData.find(s => s.slot === "pole");
+            },
+            trackName() {
+                try { return this.session.track.name } catch (e) { }
+                return null;
+            },
+            activeRow() {
+                if (this.rowIndex === -1) return null;
+                return this.rows[this.rowIndex];
+            },
+            standings() {
+                return this.finalClassification.sort((a,b) => {
+                    if (a.m_position !== b.m_position) {
+                        if (a.m_position === 0) return 1;
+                        if (b.m_position === 0) return -1;
+                    }
+                    return a.m_position - b.m_position
+                });
+            },
+            P1() {
+                return this.finalClassification.find(car => car.m_position === 1);
+            },
+            rows() {
+                let rows = [[]];
+
+                for (let driver of [...this.standings]) {
+                    let last = rows[rows.length - 1];
+                    if (last.length === 2) {
+                        rows.push([])
+                        last = rows[rows.length - 1];
+                    }
+                    last.push(driver);
+                }
+                return rows.reverse();
+            },
+            ready() {
+                return this.leaderboardData.length !== 0 && this.finalClassification.length !== 0
+            }
+        },
+        watch: {
+            ready(isReady) {
+                if (isReady && this.rowIndex === -1) {
+                    // this.startGrid();
+                }
+            },
+            active(isActive) {
+                if (isActive && this.rowIndex === -1) {
+                    this.startGrid();
+                }
+            }
+        },
+        methods: {
+            bgWrap(url) {
+                return { backgroundImage: `url(${url})`}
+            },
+            startGrid() {
+                this.rowTime = Math.floor(this.rowMaxTime / this.rows.length);
+                console.log("Grid starting, each is", this.rowTime);
+                setTimeout(() => {
+                    this.nextGrid();
+                }, 5000)
+            },
+            nextGrid() {
+                this.rowIndex++;
+                console.log(this.rows.length, this.rowIndex);
+                if (this.rows.length <= this.rowIndex) {
+                    this.rowIndex = -1;
+                    return console.log("Grid finished");
+                }
+                setTimeout(() => {
+                    this.nextGrid();
+                }, this.rowTime);
+            },
+            msToHMS(ms) {
+                if (!ms) return "-:--.---"
+                let [m, mr] = [Math.floor(ms / (60 * 1000)),ms % (60 * 1000)];
+                let [s, sr] = [Math.floor(mr / 1000), ms % 1000]
+                // console.log(m, mr);
+
+                return `${m}:${this.zeroPad(s, 2)}.${this.zeroPad(sr, 3)}`
+            },
+            msToMS(ms) {
+                if (!ms) return "--.---"
+                let mr = ms % (60 * 1000);
+                let [s, sr] = [Math.floor(mr / 1000), ms % 1000]
+                // console.log(m, mr);
+
+                return `${s}.${this.zeroPad(sr, 3)}`
+            },
+            zeroPad(num, size) {
+                return Math.floor(Math.abs(num)).toString().padStart(size, "0").slice(0, size);
+            },
+            parseDiff(ms) {
+                let [s, sr] = [Math.floor(Math.abs(ms) / 1000), Math.abs(ms) % 1000]
+                return `${(ms > 0 ? "+" : "-")}${this.zeroPad(s, 1)}.${this.zeroPad(sr, 3)}`
+            },
+        },
+        components: {
+            car: {
+                name: "car",
+                props: ["car"],
+                components: { PosComponent },
+                computed: {
+                    team() {
+                        try { return this.car.carData.team } catch (e) {}
+                        return null;
+                    },
+                    teamData() {
+                        try { return this.car.driverData.localDriverData } catch (e) {}
+                        return null;
+                    },
+                    teamLogo() {
+                        if (this.team) return this.$root.bgWrap(this.team.logo);
+                        try {
+                            let theme = this.car.driverData.localDriverData._slmnggTheme;
+                            if (!theme) return {};
+                            if (theme.default_logo) return {
+                                backgroundImage: `url(${theme.default_logo[0].url})`
+                            };
+                        } catch (e) {}
+                        return {};
+                    },
+                    sponsor() {
+                        if (this.car.m_position === 1 && this.$root.poleSponsor) return this.$root.poleSponsor;
+                        return null;
+                    }
+                },
+                template: `<div class="car">
+                <div class="car-row car-top">
+                    <div class="car-name">{{ car.carData.name }}</div>
+                    <pos-component :pos="car.m_position"></pos-component>
+                </div>
+                <div class="car-row car-images">
+                    <div class="car-headshot"></div>
+                    <div class="car-team-logo" v-if="team" :style="teamLogo"></div>
+                </div>
+                <div class="car-row" v-show="team">
+                    <div class="car-team-name" v-if="team">{{ team.name }}</div>
+                </div>
+                <div class="car-row" v-show="team">
+                    <div class="car-livery" :style="team.livery ? $root.bgWrap(team.livery) : {}"></div>
+                </div>
+                <div class="car-row" v-if="sponsor">
+                    <div class="sponsor-name">{{ sponsor.context_name || sponsor.name }}</div>
+                </div>
+                </div>`
+            }
+        }
+    })
+
+
+    socket.on("connect", () => {
+        console.log("connected to websocket!");
+        socket.emit("subscribe", "finalClassification");
+        socket.emit("subscribe", "leaderboard");
+        socket.emit("subscribe", "session");
+        socket.emit("subscribe", "settings");
+    })
+
+    socket.on("leaderboard", data => {
+        // console.log("leaderboard data", data);
+        app.leaderboardData = data;
+    })
+    socket.on("settings", settings => { app.settings = settings; })
+    socket.on("session", session => { app.session = session; })
+
+    socket.on("finalClassification", data => {
+        let fastest = null;
+        if (data && data.m_classificationData) app.finalClassification = data.m_classificationData.filter(car => car.m_position !== 0).map((car, i) => {
+            car.carI = i;
+            if (app.leaderboardData) {
+                car.carData = app.leaderboardData.find(c => c.carI === car.carI);
+            }
+            if (car.carData) {
+                if (car.carData.resultStatus === 4) car.status = "DNF";
+                if (car.carData.resultStatus === 7) car.status = "DNF";
+                if (car.carData.resultStatus === 5) car.status = "DSQ";
+            }
+            if (!fastest || fastest > car.m_bestLapTimeInMS && !car.status) {
+                fastest = car.m_bestLapTimeInMS;
+            }
+            return car;
+        }).map(car => {
+            // console.log(fastest, car.m_bestLapTimeInMS)
+            if (car.m_bestLapTimeInMS === fastest) car._fastest = true;
+            return car;
+        })
+    });
+</script>
+</body>
+</html>

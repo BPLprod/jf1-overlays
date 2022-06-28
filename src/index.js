@@ -2,35 +2,72 @@ const { F1TelemetryClient, constants } = require("@racehub-io/f1-telemetry-clien
 const { PACKETS } = constants;
 const fetch = require("node-fetch");
 
-const { getData } = require("./localData.js")
+const { getData, getSponsorData } = require("./localData.js")
 let localData = {};
+let sponsorData = [];
+let oldClassificationData = [];
 
+function getSponsor(slot) {
+    return sponsorData.find(sponsor => sponsor.slot === slot);
+}
+function getAirtableURL(atts) {
+    return atts?.[0]?.url;
+}
 (async function() {
     localData = (await getData());
+    sponsorData = (await getSponsorData());
+    settings.sponsorData = sponsorData;
+    io && io.sockets.emit("settings", settings);
+
+    setInterval(() => {
+        let data = {
+            seconds: 10,
+            infringement: "Multiple warnings"
+        }
+        let alert = {
+            title: `${data.seconds}s penalty for Person839`,
+            description: data.infringement,
+            stripe: "red",
+            duration: 15000,
+            major: "Penalty"
+        };
+
+        let penaltySponsor = getSponsor("penalty");
+        if (penaltySponsor) {
+            alert.title = `${penaltySponsor.context_name.replace("{time}", data.seconds + " second ")}`
+            alert.description = "Car 39 (Person839)" + ": " + data.infringement;
+            alert.sponsor = penaltySponsor;
+            alert.stripe = penaltySponsor.color;
+            alert.duration = 120000
+        }
+        // sendAlert(alert)
+    }, 30000)
+
     let ids = [];
     localData.forEach(driver => {
-        console.log(driver.customTeam);
-        if (driver?.customTeam?.id && ids.indexOf(driver?.customTeam?.id) === -1) {
-            ids.push(driver.customTeam.id)
+        if (driver?.team?.id && ids.indexOf(driver?.team?.id) === -1) {
+            ids.push(driver.team.id)
         }
     })
-    console.log("id", ids);
+    // console.log("id", ids);
 
     if (ids.length) {
         let teamData = await fetch(`https://data.slmn.gg/things/${ids.join(",")}`).then(res => res.json());
 
         localData.forEach(driver => {
-            if (driver?.customTeam?.id) {
-                driver._slmnggTeam = teamData.find(thing => thing.id === `rec${driver.customTeam.id}`);
-                driver._slmnggTheme = teamData.find(thing => thing.__tableName === 'Themes' && thing.team.includes(`rec${driver.customTeam.id}`))
+            if (driver?.team?.id) {
+                driver._slmnggTeam = teamData.find(thing => thing.id === `rec${driver.team.id}`);
+                driver._slmnggTheme = teamData.find(thing => thing.__tableName === 'Themes' && thing.team.includes(`rec${driver.team.id}`))
 
                 if (driver._slmnggTeam && driver._slmnggTheme) driver.team = {
+                    ...driver.team,
                     name: driver._slmnggTeam.name,
                     code: driver._slmnggTeam.code,
                     color: driver._slmnggTheme.color_theme,
-                    logo: driver._slmnggTheme.small_logo
+                    logo: getAirtableURL(driver._slmnggTheme.logo_on_dark || driver._slmnggTheme.small_logo || driver._slmnggTheme.default_logo)
                 }
             }
+            // console.log(driver);
         })
     }
 
@@ -115,7 +152,7 @@ const trackCompounds = [
 ];
 
 function getTrackTyres(tyreID) {
-    if (!cache["session"]?.m_trackId) return tyreID;
+    if (cache["session"]?.m_trackId === undefined) return tyreID;
     let localTrack = trackCompounds[cache["session"].m_trackId];
 
     const cTyres = {
@@ -142,10 +179,22 @@ function getTrackTyres(tyreID) {
 function plural(number, text, plu) {
     return `${number} ${text}${number === 1 ? '' : plu}`
 }
+function longName(driver) {
+    // return "LONG NAME" + driver.m_raceNumber;
+    // console.log(driver.m_raceNumber);
+    if (!driver) return "--";
+    let local = localNumber(driver.m_raceNumber, driver.m_teamId);
+    return `Car #${driver.m_raceNumber}` + (local.includes("#") ? "" : ` (${local})`)
+}
 
 const settings = {
     leaderboardIcons: true,
-    alerts: true
+    spectateOverlay: true,
+    showSafetyCar: true,
+    spectatorSectors: true,
+    alerts: true,
+    driverDisplay: "stripe",
+    showDRS: false
 };
 
 const purple = {
@@ -157,11 +206,26 @@ io.on("connection", (socket) => {
 
     socket.emit("new-alert", {
         duration: 5000,
+        short_title: "LOADED",
         title: "F1 Data system",
-        description: "by Freya & SLMN",
-        stripe: "lime"
+        description: "by SLMN & Freya",
+        stripe: "lime",
+        headshot: "https://cdn.discordapp.com/attachments/485493459357007876/964963900586090516/Shock_Super.png",
+        sponsor: getSponsor("race_title")
     });
+    //
+    // sendAlert({
+    //     duration: 10000, short_title: "3s PENALTY", title: "Car #69 (timweak)",
+    //     description: "Multiple warnings", stripe: "red", sponsor: getSponsor("penalty")
+    // })
+    // sendAlert({
+    //     duration: 10000, short_title: "WARNING", title: "Car #69 (timweak)",
+    //     description: "Can't drive", stripe: "yellow", sponsor: getSponsor("warning")
+    // })
+
     socket.emit("settings", settings);
+    // console.log(_spec)
+    socket.emit("spectating", _spec);
 
     socket.on("subscribe", (room) => {
         socket.join(room);
@@ -207,7 +271,8 @@ client.on(PACKETS.event, event => {
                 title: "Speed trap - fastest in session",
                 description: `Driver: ${driver?.name || ''} @ ${(event.m_eventDetails.speed / 1.60934).toFixed(1)}mph`,
                 stripe: "dodgerblue",
-                only: "speed-trap-fastest"
+                only: "speed-trap-fastest",
+                sponsor: getSponsor("speed_trap")
             })
         }
         // if (event.m_eventDetails.driverFastestInSession) {
@@ -224,16 +289,34 @@ client.on(PACKETS.event, event => {
 
     if (event.m_eventStringCode === "SSTA") {
         settings["leaderboardIcons"] = true;
+        settings["spectateOverlay"] = true;
         settings["podium"] = false;
+        settings["spectatorSectors"] = true;
+        // settings["alerts"] = true;
 
-        // if(cache["session"]?.m_sessionType) console.log("SSTA Session", cache["session"].m_sessionType.short)
-        // if (cache["session"]?.m_sessionType && ["ShortQ", "OneShotQ"].includes(cache["session"].m_sessionType.short)) {
-        //     settings["qualifying"] = true;
-        //     settings["alerts"] = false;
-        //     settings["spectatorSectors"] = true;
-        // }
+        if(cache["session"]?.sessionType) console.log("SSTA Session", cache["session"].sessionType.short)
+        if (cache["session"]?.sessionType && ["ShortQ", "OneShotQ"].includes(cache["session"].sessionType.short)) {
+            settings["qualifying"] = true;
+            settings["alerts"] = false;
+        }
+        if (cache["session"]?.sessionType && ["R"].includes(cache["session"].sessionType.short)) {
+            settings["qualifying"] = false;
+            settings["alerts"] = true;
+        }
 
         io.sockets.emit("settings", settings);
+    }
+
+    if (event.m_eventStringCode === "DRSE") {
+        // DRS back on
+        console.log("DRS ON?")
+    }
+    if (event.m_eventStringCode === "DRSD") {
+        // DRS off
+        console.log("DRS OFF?");
+        [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(i => {
+            cache[`DRS-${i}-active`] = false;
+        })
     }
 
     if (event.m_eventStringCode === "SEND") {
@@ -241,10 +324,30 @@ client.on(PACKETS.event, event => {
         settings["qualifying"] = false;
         settings["alerts"] = false;
         settings["spectatorSectors"] = false;
+        settings["spectateOverlay"] = false;
 
 
-        if (cache["session"]?.m_sessionType.short === "R") {
+        if (cache["session"]?.sessionType.short === "R" && cache["session"]) {
+            // let _ps = 0;
+            // setInterval(() => {
+            //     console.log("AFTER RACE", ++_ps);
+            // }, 1000)
+
+            settings["ending"] = true; io.sockets.emit("settings", settings);
+
             setTimeout(() => {
+                if (!settings["ending"]) return;
+                settings["dotd"] = true; io.sockets.emit("settings", settings);
+            }, 10500)
+            setTimeout(() => {
+                if (!settings["ending"]) return;
+                settings["dotd"] = false; io.sockets.emit("settings", settings);
+            }, 14500)
+
+            console.log("PODIUM 1", cache["session"].safetyCarStatus)
+            setTimeout(() => {
+                if (!settings["ending"]) return;
+                console.log("PODIUM 2", cache["session"].safetyCarStatus)
                 settings["podium"] = true;
                 io.sockets.emit("settings", settings);
             }, 20 * 1000);
@@ -267,36 +370,69 @@ client.on(PACKETS.event, event => {
             other = getDriver(event.m_eventDetails.otherVehicleIdx);
             if (other && other.m_raceNumber) {
                 other.name = localNumber(other.m_raceNumber, other.m_teamId)
-                data.infringement += ` (with ${other.name})`
+                data.infringement += ` with ${longName(other)}`
             }
         }
 
         if (data.penalty === "Warning" && driver) {
             sendAlert({
-                title: `Warning ${driver ? 'for ' + localNumber(driver.m_raceNumber, driver.m_teamId) : ''}`,
+                short_title: "WARNING",
+                title: longName(driver),
                 description: data.infringement,
-                stripe: "yellow"
+                stripe: "yellow",
+                sponsor: getSponsor("warning")
             })
             persist("warning", event.m_eventDetails.vehicleIdx, 8000)
             if (!cache[`counts-${event.m_eventDetails.vehicleIdx}-warnings`]) cache[`counts-${event.m_eventDetails.vehicleIdx}-warnings`] = 0;
             cache[`counts-${event.m_eventDetails.vehicleIdx}-warnings`]++;
         } else if (data.penalty === "Drive through") {
             sendAlert({
-                title: `Drive through penalty ${driver ? 'for ' + localNumber(driver.m_raceNumber, driver.m_teamId) : ''}`,
+                short_title: "DRIVE THROUGH",
+                title: longName(driver),
                 description: data.infringement,
                 stripe: "red",
-                duration: 15000
+                duration: 15000,
+                sponsor: getSponsor("penalty")
             })
             persist("penalty", event.m_eventDetails.vehicleIdx, 15000)
             if (!cache[`counts-${event.m_eventDetails.vehicleIdx}-warning`]) cache[`counts-${event.m_eventDetails.vehicleIdx}-warning`] = 0;
             cache[`counts-${event.m_eventDetails.vehicleIdx}-warning`]++;
-        } else if (data.penalty === "Time penalty") {
+
+        } else if (data.penalty === "Stop Go") {
             sendAlert({
-                title: `${data.seconds}s penalty ${driver ? 'for ' + localNumber(driver.m_raceNumber, driver.m_teamId) : ''}`,
+                short_title: "5s PENALTY",
+                title: longName(driver),
                 description: data.infringement,
                 stripe: "red",
-                duration: 15000
+                duration: 15000,
+                sponsor: getSponsor("penalty")
             })
+            persist("penalty", event.m_eventDetails.vehicleIdx, 15000)
+            if (!cache[`counts-${event.m_eventDetails.vehicleIdx}-penalty`]) {
+                cache[`counts-${event.m_eventDetails.vehicleIdx}-penalty`] = 0;
+                cache[`counts-${event.m_eventDetails.vehicleIdx}-penaltytime`] = 0;
+            }
+            cache[`counts-${event.m_eventDetails.vehicleIdx}-penalty`]++;
+            cache[`counts-${event.m_eventDetails.vehicleIdx}-penaltytime`] += 5;
+        } else if (data.penalty === "Time penalty") {
+            let alert = {
+                short_title: data.seconds + "s PENALTY",
+                title: longName(driver),
+                description: data.infringement,
+                stripe: "red",
+                duration: 15000,
+                sponsor: getSponsor("penalty")
+            };
+
+            // if (penaltySponsor) {
+            //     alert.title = data.seconds + " second penalty"
+            //     if (driver) alert.description = localNumber(driver.m_raceNumber, driver.m_teamId) + ": " + data.infringement;
+            //     alert.sponsor = penaltySponsor;
+            //     alert.duration = 120000
+            // }
+
+
+            sendAlert(alert)
             persist("penalty", event.m_eventDetails.vehicleIdx, 15000)
             if (!cache[`counts-${event.m_eventDetails.vehicleIdx}-penalty`]) {
                 cache[`counts-${event.m_eventDetails.vehicleIdx}-penalty`] = 0;
@@ -310,19 +446,23 @@ client.on(PACKETS.event, event => {
                 title: `${driver ? localNumber(driver.m_raceNumber, driver.m_teamId) : ''} disqualified`,
                 description: data.infringement,
                 stripe: "red",
-                duration: 30000
+                duration: 30000,
+                sponsor: getSponsor("dnf")
             })
         } else if (data.penalty === "Retired" && driver) {
             sendAlert({
                 major: "Retired",
-                title: `${driver ? localNumber(driver.m_raceNumber, driver.m_teamId) : ''} retired from the race`,
+                title: longName(driver),
+                sponsor: getSponsor("dnf"),
                 description: data.infringement,
                 stripe: "white",
-                duration: 30000
+                duration: 30000,
             })
         } else if (driver && data.penalty !== "This lap invalidated without reason") {
             sendAlert({
-                title: `${data.penalty} ${driver ? 'for ' + localNumber(driver.m_raceNumber, driver.m_teamId) : ''}`,
+                short_title: data.penalty + " PENALTY",
+                title: longName(driver),
+                sponsor: getSponsor("penalty"),
                 description: data.infringement,
                 stripe: "red",
                 duration: 10000
@@ -356,8 +496,8 @@ client.on(PACKETS.sessionHistory, (history) => {
 
         if (bestSectorTime && bestSectorTime > 10000 && (purple.sectors[sectorNum - 1] === 0) || purple.sectors[sectorNum - 1] > bestSectorTime) {
             purple.sectors[sectorNum - 1] = bestSectorTime;
-            console.log(`Purple sector updated ${sectorNum} ${bestSectorTime}`)
-            console.log("current purple sectors: ", [...purple.sectors].map(p => msToHMS(p)));
+            // console.log(`Purple sector updated ${sectorNum} ${bestSectorTime}`)
+            // console.log("current purple sectors: ", [...purple.sectors].map(p => msToHMS(p)));
         }
 
         // best sector
@@ -432,11 +572,17 @@ client.on(PACKETS.lobbyInfo, (lobbyInfo) => {
 })
 client.on(PACKETS.finalClassification, (data) => {
     delete data.m_header.m_sessionUID;
+    console.log("Classification data received")
     cache["finalClassification"] = data;
+    oldClassificationData = data;
 })
-
+let _spec = null;
+function setSpectating(car) {
+    _spec = car;
+    io.to("spectating").emit("spectating", car)
+}
 client.on(PACKETS.session, (data) => {
-    if (cache["session"]?.m_sessionType !== constants.SESSION_TYPES[data.m_sessionType]) {
+    if (cache["session"]?.m_sessionType !== data.m_sessionType) {
         console.warn("Emptying session data");
         resetCache();
         // sendAlert({
@@ -446,16 +592,24 @@ client.on(PACKETS.session, (data) => {
         // });
     }
     delete data.m_header.m_sessionUID;
+
+    if (cache["session"]?.m_safetyCarStatus !== data.m_safetyCarStatus) {
+        // SAFETY CHANGE
+        settings["showDRS"] = false;
+        io.sockets.emit("settings", settings);
+    }
+
     cache["session"] = {
         ...data,
-        m_weather: constants.WEATHER[data.m_weather],
-        m_safetyCarStatus: constants.SAFETY_CAR_STATUSES[data.m_safetyCarStatus],
-        m_sessionType: constants.SESSION_TYPES[data.m_sessionType],
-        m_trackId: data.m_trackId
+        weather: constants.WEATHER[data.m_weather],
+        safetyCarStatus: constants.SAFETY_CAR_STATUSES[data.m_safetyCarStatus],
+        sessionType: constants.SESSION_TYPES[data.m_sessionType],
+        m_trackId: data.m_trackId,
+        track: constants.TRACKS[data.m_trackId]
     };
 
     //'m_header',
-    //   'm_weather',
+    //   'weather',
     //   'm_trackTemperature',
     //   'm_airTemperature',
     //   'm_totalLaps',
@@ -475,7 +629,7 @@ client.on(PACKETS.session, (data) => {
     //   'm_safetyCarStatus',
     //   'm_networkGame',
     //   'm_numWeatherForecastSamples',
-    //   'm_weatherForecastSamples',
+    //   'weatherForecastSamples',
     //   'm_forecastAccuracy',
     //   'm_aiDifficulty',
     //   'm_seasonLinkIdentifier',
@@ -497,10 +651,10 @@ client.on(PACKETS.session, (data) => {
     let driver = getDriver(data.m_spectatorCarIndex)
     if (driver && data.m_isSpectating) {
 
-        if (cache["spectator-networkid"] && cache["spectator-networkid"] !== driver.m_networkId) {
+        if (cache["spectator-networkid"] !== undefined && cache["spectator-networkid"] !== driver.m_networkId) {
             console.log(`Now spectating ${localNumber(driver.m_raceNumber, driver.m_teamId)} @${driver.m_networkId} ${driver.m_name}`)
 
-            io.to("spectating").emit("spectating", {
+            setSpectating({
                 name: localNumber(driver.m_raceNumber, driver.m_teamId),
                 number: driver.m_raceNumber,
                 networkID: driver.m_networkId,
@@ -512,23 +666,21 @@ client.on(PACKETS.session, (data) => {
                 driver
             });
 
-            if (obs && driver.m_networkId !== 255) {
-                console.log("attempting", `POV ${driver.m_networkId + 1}`)
-                obs.send("SetCurrentScene", {
-                    "scene-name": `POV ${driver.m_networkId + 1}`
-                }).then(c => {
-                    console.log(`Switched scenes!`, c);
-                }).catch(e => {
-                    // console.error("Failed to switch scenes :(", e);
-                })
-            }
+            // if (obs && driver.m_networkId !== 255) {
+            //     console.log("attempting", `POV ${driver.m_networkId + 1}`)
+            //     obs.send("SetCurrentScene", {
+            //         "scene-name": `POV ${driver.m_networkId + 1}`
+            //     }).then(c => {
+            //         console.log(`Switched scenes!`, c);
+            //     }).catch(e => {
+            //         // console.error("Failed to switch scenes :(", e);
+            //     })
+            // }
         }
 
         cache["spectator-networkid"] = driver.m_networkId;
     } else {
-        io.to("spectating").emit("spectating", {
-            carI: data.m_spectatorCarIndex
-        })
+        setSpectating({carI: data.m_spectatorCarIndex})
     }
 
     // console.log(Object.keys(data))
@@ -592,7 +744,7 @@ function getSectorColor(oldData, newData, i) {
     let driver = drivers[i];
     if (driver && driver?.m_networkId !== 255) {
 
-        console.log(`${localNumber(driver?.m_raceNumber, driver?.m_teamId)} sector ${oldData.m_sector} ${newData.m_sector} finished ${msToHMS(time)}`, `Status D${oldData.m_driverStatus} R${oldData.m_resultStatus} P${oldData.m_pitStatus}`)
+        // console.log(`${localNumber(driver?.m_raceNumber, driver?.m_teamId)} sector ${oldData.m_sector} ${newData.m_sector} finished ${msToHMS(time)}`, `Status D${oldData.m_driverStatus} R${oldData.m_resultStatus} P${oldData.m_pitStatus}`)
     }
 
     return "purple";
@@ -670,7 +822,7 @@ function getSectorData(oldData, newData, i) {
             }
             if (!inSector && !bestLapSectorTime) {
                 // no best lap
-                // sectorColor = "white";
+                sectorColor = "pink";
             }
         }
 
@@ -737,18 +889,25 @@ function lapComplete(oldData, newData, i) {
             //     duration: 10000
             // })
 
-            console.log("player's best lap!", [
-                newData.m_lastLapTimeInMS,
-                oldData.m_sector1TimeInMS,
-                oldData.m_sector2TimeInMS,
-                oldData.currentSectorTime
-            ].map(p => msToHMS(p)));
+            // console.log("player's best lap!", [
+            //     newData.m_lastLapTimeInMS,
+            //     oldData.m_sector1TimeInMS,
+            //     oldData.m_sector2TimeInMS,
+            //     oldData.currentSectorTime
+            // ].map(p => msToHMS(p)));
         }
     }
 }
 client.on(PACKETS.carStatus, (data) => {
     // all cars
     statuses = (data.m_carStatusData || []).map((e, i) => ({...e, carI: i}));
+})
+
+client.on(PACKETS.carTelemetry, (data) => {
+    // all cars
+    data.m_carTelemetryData.forEach((car, i) => {
+        cache[`telemetry-${i}`] = car;
+    })
 })
 
 client.on(PACKETS.participants, (data) => {
@@ -782,8 +941,8 @@ client.on(PACKETS.lapData, (lapData) => {
                 //     description: `Sector ${car.m_sector + 1} time: ${msToHMS(old.currentSectorTime)}`,
                 //     stripe: sectorColor
                 // })
-                console.log("sector color:", sectorColor);
-                console.log("current purple sectors: ", [...purple.sectors].map(p => msToHMS(p)));
+                // console.log("sector color:", sectorColor);
+                // console.log("current purple sectors: ", [...purple.sectors].map(p => msToHMS(p)));
             }
         }
 
@@ -803,12 +962,12 @@ client.on(PACKETS.lapData, (lapData) => {
                 // })
 
                 if (old._tyres?.name && old._tyres.name !== car._tyres.name || (old._tyres.laps > car._tyres.laps)) {
-                    sendAlert({
-                        title: `Tyre swap - ${localNumber(driver.m_raceNumber, driver.m_teamId)}`,
-                        // description: `${old._tyres.name} ${plural(old._tyres.laps, "lap", "s")} -> ${car._tyres.laps === 0 ? `Fresh ${car._tyres.name}` : plural(car._tyres.laps, "lap", "s")}`,
-                        description: `${old._tyres.name} ${plural(old._tyres.laps, "lap", "s")} -> ${car._tyres.name} ${plural(car._tyres.laps, "lap", "s")}`,
-                        stripe: "white"
-                    })
+                    // sendAlert({
+                    //     title: `Tyre swap - ${localNumber(driver.m_raceNumber, driver.m_teamId)}`,
+                    //     // description: `${old._tyres.name} ${plural(old._tyres.laps, "lap", "s")} -> ${car._tyres.laps === 0 ? `Fresh ${car._tyres.name}` : plural(car._tyres.laps, "lap", "s")}`,
+                    //     description: `${old._tyres.name} ${plural(old._tyres.laps, "lap", "s")} -> ${car._tyres.name} ${plural(car._tyres.laps, "lap", "s")}`,
+                    //     stripe: "white"
+                    // })
                 }
             }
         } catch (e) { console.warn(e) }
@@ -837,7 +996,7 @@ client.on(PACKETS.lapData, (lapData) => {
             }
 
             if (driver.status.m_drsActivationDistance === 0 && cache[`drs-${i}-counted-down`] && !cache[`drs-${i}-active`]) {
-                console.log(`DRS on ${localNumber(driver.m_raceNumber)}`)
+                // console.log(`DRS on ${localNumber(driver.m_raceNumber)}`)
                 cache[`drs-${i}-active`] = true;
                 drs.active = true;
 
@@ -945,8 +1104,10 @@ client.on(PACKETS.lapData, (lapData) => {
             driveThroughs: car.m_numUnservedDriveThroughPens,
             resultStatus: car.m_resultStatus,
             driverStatus: car.m_driverStatus,
+            racing: !([4,5,7].includes(car.m_resultStatus)),
             pitStatus: car.m_pitStatus,
-            // carDamage: cache[`cardamage-${i}`],
+            carDamage: cache[`cardamage-${i}`],
+            telemetry: cache[`telemetry-${i}`],
             allCarData: car
         };
     })
@@ -991,7 +1152,7 @@ client.on(PACKETS.carDamage, data => {
                     }
 
                     if (!["m_tyresWear", "m_tyresDamage"].includes(key) && diff > 0) {
-                        console.log("CAR DAMAGE", key, "car i", i, old[key], "->", val, " ++", diff);
+                        // console.log("CAR DAMAGE", key, "car i", i, old[key], "->", val, " ++", diff);
                         // if (requiredDamageJumps[key] && diff >= requiredDamageJumps[key]) {
                         //     sendAlert({
                         //         title: `Car damage: ${key}`,
@@ -1017,7 +1178,7 @@ setInterval(() => {
     io.to("session").emit("session", cache["session"]);
     io.to("sessionHistory").emit("sessionHistory", cache["sessionHistory"]);
     io.to("lobbyInfo").emit("lobbyInfo", cache["lobbyInfo"]);
-    io.to("finalClassification").emit("finalClassification", cache["finalClassification"]);
+    io.to("finalClassification").emit("finalClassification", oldClassificationData);
     io.to("purple").emit("purple", purple);
     io.to("localData").emit("localData", localData);
 }, 1000);

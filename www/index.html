@@ -105,6 +105,8 @@
         .o-lower-text {
             font-weight: bold;
             margin-right: 20px;
+            white-space: nowrap;
+            padding-left: 6px;
         }
 
         .o-lower-stripe {
@@ -124,7 +126,7 @@
         .podium-enter-to, .podium-leave { opacity: 1; transform: translate(0,0) }
 
         #driver-profile {
-            background-color: rgba(0, 0, 0, 0.95);
+            background-color: rgba(0, 0, 0, 0.98);
             border-bottom-right-radius: 16px;
         }
 
@@ -273,12 +275,12 @@
             width: 6px;
             height: 22px;
             /*background-color: gray;*/
-            margin: 0 6px;
+            /*margin: 0 6px;*/
             flex-shrink: 0;
         }
 
         .scoreboard-item {
-            background-color: rgba(0,0,0,1);
+            /*background-color: rgba(0,0,0,1);*/
         }
         .s-pos, .s-driver-name {
             /*opacity: 0;*/
@@ -307,7 +309,233 @@
         .scoreboard-item {
             /*display: block !important;*/
         }
+
+        .s-team-display {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-right: 2px;
+        }
+        /*.s-team-display>div {*/
+        /*    position: absolute;*/
+        /*    top: 0;*/
+        /*    left: 0;*/
+        /*}*/
+        .s-team-logo-holder {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .s-team-logo {
+            --gap: 4px;
+            width: calc(100% - var(--gap));
+            height: calc(100% - var(--gap));
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .s-pos {
+            width: 31px;
+            margin: 0 4px;
+        }
+
+        #f1-top {
+            background-color: #060606;
+            position: absolute;
+            left: 90px;
+            width: 270px;
+            display: flex;
+            transition: all .2s ease;
+            top: 80px;
+            height: 80px;
+            border-top-right-radius: 8px;
+        }
+
+        #f1-top.smaller {
+            top: 40px;
+            /*height: 77px;*/
+        }
+        #f1-laps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            font-size: 32px;
+            /*white-space: break-spaces;*/
+            text-align: center;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #f1-logo {
+            width: 110px;
+            height: 100%;
+            background-image: url(https://cdn.discordapp.com/attachments/485493459357007876/966107507179278346/jf1white.png);
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 50%;
+        }
+        #safety-car {z-index: 2;}
+        .zones {position: absolute;background: black;bottom: 909px;left: 90px;width: 270px;display: flex;font-size: 9px; height: 4px;
+            justify-content: space-evenly; z-index: 10}
+
+        .y-zone[data-flag="0"] {background: black;}
+        .y-zone[data-flag="1"] {background: #408E36;}
+        .y-zone[data-flag="2"] {background: darkblue;}
+        .y-zone[data-flag="3"] {background: #F1C403;}
+        .yellow-flag {position: absolute;background-color: #f1c403;color: black;font-weight: bold;bottom: 914px;left: 90px;width: 270px;height: 43px;display: flex;justify-content: center;align-items: center;text-transform: uppercase;font-size: 26px;}
+
+        .yellow-flag, .red-flag {
+            position: absolute;
+            background-color: #f1c403;
+            color: black;
+            font-weight: bold;
+            bottom: 914px;
+            left: 90px;
+            width: 270px;
+            height: 43px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+            font-size: 26px;
+        }
+        .red-flag {
+            color: black;
+            background-color: #fd1212;
+        }
+
+        .zones.red, .zones.red .y-zone {
+            background-color: #fd1212;
+        }
+
+        .pit-sponsor {width: 100%;display: flex;justify-content: center;align-items: center;padding: 10px;}
+
+        .pit-sponsor-logo {max-width: 100%; max-height: 90px;}
+        .dotd {position: absolute;top: 266px;left: 682px;background: black;width: 556px;height: 54px;display: flex;justify-content: center;align-items: center;font-size: 28px;font-weight: bold;font-variant-ligatures: none;}
+
+        .dotd-sponsor-logo {width: 1.5em;height: 1.5em;margin-right: .1em;background-size: contain;background-repeat: no-repeat;background-position: center;}
+
+
+        #driver-profile {min-width: 0 !important;width: 800px !important;}
+
+        .driver-profile-holder {width: 92%;}
+
+        .d-number {display: none;}
+
+        .d-right {margin-left: 4px;}
+        .pit-anim-enter-active, .pit-anim-leave-active {
+            transition: all 300ms ease;
+        }
+        .pit-anim-enter-to, .pit-anim-leave {
+            max-height: 80px;
+        }
+        .pit-anim-leave-to, .pit-anim-enter {
+            max-height: 0;
+        }
+
+        #scoreboard.leaderboard-sort-teams .scoreboard-item {height: 30px; }
+        .scoreboard-item.group-top { transform: translate(0, 4px); }
+        .scoreboard-item.group-middle { transform: translate(0, 2px); }
+        .scoreboard-item.group-bottom { transform: translate(0, 0px); }
+
+        #scoreboard.leaderboard-sort-teams .s-pos .pos { height: 26px; }
+
+        .zones {bottom: 910px;}
+
+        #f1-top { height: 90px; }
+        #f1-top.smaller {top: 33px;}
+        .wheel {
+            color: transparent;
+            background-image: url(https://cdn.discordapp.com/attachments/485493459357007876/973336805476810762/zoom.png);
+            width: 30px;
+            height: 30px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .tyre-status {width: 25% !important;font-variant-numeric: tabular-nums;font-size: 14px;}
+        .sx-tyreWear {padding: 0 4px;}
+
+        .wing {background-color: black;width: 32px;height: 24px;margin: 0 2px;clip-path: polygon(0 0, 30% 0, 100% 50%, 100% 100%, 0 100%);}
+
+        .wing.wing-none {background-color: #333 !important;}
+
+        .wing:first-child {
+            transform: scaleX(-1)
+        }
+        .si-wings {
+            display: flex;
+        }
+
+        .si-wing {
+            background-color: black;
+            width: 32px;
+            height: 24px;
+            margin: 0 2px;
+            clip-path: polygon(0 0, 30% 0, 100% 50%, 100% 100%, 0 100%);
+            color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .si-wing:first-of-type {
+            transform: scaleX(-1);
+        }
+
+        .lap-diff.lap-alt {opacity: 0.4;}
+        .si-wing span {color: black; transform:  translate(0, 3px); font-size: 13px;}
+
+        .si-wing:first-of-type span { transform: scaleX(-1) translate(0, 3px)}
+        .scoreboard-mini-icons {
+            background-color: rgba(0,0,0,0.8);
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .si-wings {
+            padding: 0 2px;
+        }
+        #f1-laps {flex-direction: column;}
+
+        .q-top {font-weight: bold;margin-bottom: .1em;font-size: 36px;}
+
+        .q-time {font-size: 28px;}
+        #in-danger {
+            position: absolute;
+            height: 20px;
+            top: calc(15 * 34px);
+            width: 100%;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ff3737;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .scoreboard-mini-icons.penalty-gap {
+            left: calc(384px + 41px);
+        }
     </style>
+<!--    <style data-for="af2">-->
+<!--        #f1-top, #fastest-lap, .spectated-driver {background-color: white;color: #043961;}-->
+<!--        .spectated-driver .pos {background-color: #043961;color: white;}-->
+<!--        #f1-logo {background-image: url(https://data.slmn.gg/image?size=orig&url=https://dl.airtable.com/.attachments/64f1dc1f1e50256f3c8eac9bd5afd614/1a0637bc/Formula_2_logo.png);background-size: 90%;}-->
+<!--        .zones {background: transparent;}-->
+<!--        .y-zone[data-flag="0"] {background: transparent;}-->
+<!--    </style>-->
+    <link rel="stylesheet" href="https://slmn.io/fa-all.min.css"/>
 </head>
 <body class="main">
 <div id="app" v-cloak>
@@ -319,28 +547,23 @@
     </transition>
 
     <transition name="swipe-down">
-        <transition-group is="div" name="list" id="scoreboard" v-if="settings.leaderboardIcons">
-            <div v-for="(car, i) in leaderboard" :key="car.carI" class="scoreboard-item" :class="{
-            'fastest-lap': fastestCar && fastestCar.carI === car.carI, 'is-spectating': spectatingCar && car.carI === spectatingCar.carI,
-            'status--dnf': car.resultStatus === 7 || car.resultStatus === 4, 'status--dsq': car.resultStatus === 5 }">
-                <div class="scoreboard-internal">
-                    <div class="s-pos"><pos-component :pos="car.pos" /></div>
-                    <div class="s-team-stripe" :style="{ backgroundColor: car.team && car.team.color }"></div>
-                    <div class="s-driver-name">{{ car.team && car.team.code ? car.team.code + " " : ""}}{{ car.name }}</div>
-                </div>
-                <div class="scoreboard-icons">
-                    <div class="drs drs-charging" v-if="car.drs.distance" :style="drsStyle(car.drs.distance)"><!--DRS--></div>
-                    <div class="drs drs-active" v-if="car.drs.active"><!--DRS--></div>
-                    <transition name="swipe-left">
-                        <div class="w-box warning" v-if="car.persist && car.persist.warning && !car.persist.penalty">W</div>
-                    </transition>
-                    <transition name="swipe-left">
-                        <div class="w-box penalty" v-if="car.persist && car.persist.penalty">P</div>
-                    </transition>
-                    <div class="ai" v-if="car.ai">AI</div>
-                </div>
-            </div>
-        </transition-group>
+        <div id="scoreboard" v-if="settings.leaderboardIcons" :style="{height: `${(leaderboard.length * 34) + (showInDanger ? 20 : 0)}px`}" :class="{'leaderboard-sort-teams': settings.leaderboardSortTeams}">
+            <leaderboard-item v-for="(car, i) in sortedLeaderboard" :leaderboard-index="i" :key="car.carI" :car="car"
+                              :show-in-danger="showInDanger"
+                              :is-spectating="spectatingCar && car.carI === spectatingCar.carI"
+                              :class="{'fastest-lap': fastestCar && fastestCar.carI === car.carI,
+                              'highlight-fastest-lap': fastestCar && fastestCar.carI === car.carI && showFastest,
+                              'is-spectating': spectatingCar && car.carI === spectatingCar.carI,
+                              'status--dnf': car.resultStatus === 7 || car.resultStatus === 4,
+                              'status--dsq': car.resultStatus === 5 }"></leaderboard-item>
+
+            <transition name="fade">
+                <div id="in-danger" v-if="showInDanger">Drivers in danger</div>
+            </transition>
+        </div>
+    </transition>
+    <transition name="swipe-up">
+        <div id="scoreboard-extra-title" class="scoreboard-extra"  v-if="settings.showExtraInfo && settings.leaderboardIcons" v-html="extraInfoTitle" :key="$root.settings.extraInfoType"></div>
     </transition>
 
     <transition name="podium">
@@ -363,10 +586,14 @@
                 <div class="o-lower-stripe" :style="{backgroundColor: fastestCar.team.color}"></div>
                 <div class="o-lower-name">{{ fastestCar.name }}</div>
             </div>
-            <div class="o-lower-part o-lower-fastest" v-if="winningConstructor">
+            <div class="o-lower-part o-lower-fastest" v-if="!podiumSponsor && winningConstructor">
                 <div class="o-lower-text">Best Team</div>
                 <div class="o-lower-stripe" :style="{backgroundColor: winningConstructor.color}"></div>
                 <div class="o-lower-name">{{ winningConstructor.name }}</div>
+            </div>
+            <div class="o-lower-part o-lower-fastest" v-if="podiumSponsor">
+                <div class="o-lower-text">Podium Sponsor</div>
+                <div class="o-lower-name">{{ podiumSponsor.name }}</div>
             </div>
         </div>
     </transition>
@@ -381,7 +608,7 @@
                             <div class="d-pos">{{ spectatingCarData.pos }}</div>
                             <div class="d-name-text">{{ spectatingCar.name }}</div>
                         </div>
-                        <div class="d-grid" v-if="session && session.m_sessionType && session.m_sessionType.short === 'R'">
+                        <div class="d-grid" v-if="session && session.sessionType && session.sessionType.short === 'R'">
                             <span class="d-grid-text">Grid</span>
                             <span class="d-grid-pos">{{ spectatingCar.driver.gridPos }}</span>
                             <span class="d-grid-diff" :style="{color: spectatingCarData.gridDiff > 0 ? 'lime' : spectatingCarData.gridDiff < 0 ? 'red' : ''}">{{ spectatingCarData.gridDiff > 0 ? '+' : ''}}{{ !spectatingCarData.gridDiff ? '--' : spectatingCarData.gridDiff }}</span>
@@ -418,30 +645,540 @@
     </div>
 
     <transition-group tag="div" id="alerts" name="list">
-        <div class="alert" v-for="alert in validAlerts" :key="alert.id" :data-key="alert.id" v-bind:key="alert.id">
-            <div class="alert-part alert-major" v-if="alert.major" :style="{ backgroundColor: alert.stripe, color: 'black' }">{{ alert.major }}</div>
-            <div class="alert-part alert-main">
-                <div class="alert-stripe" v-if="alert.stripe" :data-stripe="alert.stripe" :style="{ backgroundColor: alert.stripe }"></div>
-                <div class="alert-body">
-                    <div class="alert-title">{{ alert.title }}</div>
-                    <div class="alert-description">{{ alert.description }}</div>
+        <alert v-for="alert in validAlerts" :alert="alert" :key="alert.id" :data-key="alert.id"></alert>
+    </transition-group>
+
+    <transition name="swipe-down">
+        <div id="pit" v-if="carsPitting.length">
+            <div class="pit-sponsor" v-if="pitSponsor" :style="{ backgroundColor: pitSponsor.color }">
+                <img :src="pitSponsor.logo" class="pit-sponsor-logo">
+            </div>
+            <div class="pit-descriptor">Pit Lane</div>
+            <transition-group name="pit-anim" class="pit-list">
+                <div class="pit-car" v-for="car in carsPitting" :key="car.carI">
+                    <div class="pit-top">
+                        <pos-component class="pit-pos" :pos="car.pos"></pos-component>
+                        <div class="pit-name">{{ car.name }}</div>
+                    </div>
+                    <pit-component :timer="car.pitTimer" :car-i="car.carI" :pit-status="car.pitStatus" :color="car.team && car.team.color" :tyres="car.tyres"></pit-component>
+                </div>
+            </transition-group>
+        </div>
+    </transition>
+
+        <safety-car id="safety-car" v-if="session && session.safetyCarStatus && settings.showSafetyCar" :status="session.safetyCarStatus"></safety-car>
+
+        <transition name="swipe-left">
+            <spectated-driver :car="spectatingCarData" v-if="settings.spectateOverlay"></spectated-driver>
+        </transition>
+
+    <transition name="swipe-down">
+        <div class="dotd" v-if="settings.dotd && dotdSponsor">
+            <div class="dotd-sponsor-logo" :style="$root.bgWrap(dotdSponsor.logo)" v-if="dotdSponsor.logo"></div>
+            <div class="dotd-sponsor-name">{{ dotdSponsor.context_name || dotdSponsor.name }}</div>
+        </div>
+    </transition>
+
+    <div id="top-alerts">
+        <transition name="swipe-down" mode="out-in">
+            <div id="fastest-lap" :key="fastestTime" v-if="fastestTime && showFastest">
+                <div class="fl-top">
+                    <div class="fl-top-part" v-if="fastestLapSponsor"><div class="fl-top-logo" :style="fastestLapSponsor.logo"></div>{{ fastestLapSponsor.context_name ? fastestLapSponsor.context_name : (fastestLapSponsor.name + " Fastest Lap") }}</div>
+                    <div class="fl-top-part" v-if="!fastestLapSponsor">FASTEST LAP</div>
+                </div>
+                <div class="fl-bottom">
+                    <div class="fl-time">{{ fastestTime }}</div>
+                    <div class="fl-name">{{ fastestCar.name }}</div>
+                </div>
+                <div class="fl-lowest" v-if="fastestCar.team">
+                    {{ fastestCar.team.name }}
                 </div>
             </div>
+        </transition>
+    </div>
+
+    <transition name="swipe-up">
+        <div id="f1-top" v-if="settings.leaderboardIcons && session" :class="{'smaller': session.safetyCarStatus !== 'No Safety Car' || yellowFlags || settings.redFlag }">
+            <div id="f1-logo"></div>
+            <transition name="fade"><div id="f1-laps" v-if="session" :style="{ color: (settings.redFlag ? '#fd1212' : yellow ? '#F2C404' : '')}" v-html="topText"></div></transition>
         </div>
-    </transition-group>
+    </transition>
+    <transition name="swipe-up">
+        <div class="zones" v-if="zones.length && settings.leaderboardIcons && !yellow" :class="{'grow': yellowFlags, 'red': settings.redFlag }">
+            <div class="y-zone" v-for="(zone, i) in zones" :data-flag="zone.m_zoneFlag" :key="i" :style="{width: zone.m_zoneLengthPerc }"></div>
+        </div>
+    </transition>
+    <transition name="swipe-down">
+        <div class="yellow-flag" v-if="yellowFlags && settings.leaderboardIcons">Yellow Flag</div>
+    </transition>
+
+    <transition name="swipe-down">
+        <div class="red-flag" v-if="settings.redFlag && settings.leaderboardIcons">Red Flag</div>
+    </transition>
+
+
+<!--    <weather :session="session"></weather>-->
+
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/shared.js"></script>
+</body>
+</html>
 <script>
     const socket = new io();
 
     const app = new Vue({
         el: "#app",
         components: {
-            PosComponent
+            PosComponent, PitComponent,
+            Alert: AlertComponent,
+            LeaderboardItem: {
+                name: "LeaderboardItem",
+                components: {
+                    PosComponent,
+                    Tyres: TyreComponent,
+                },
+                props: ["car", "leaderboardIndex", "isSpectating", "showInDanger"],
+                data: () => ({
+                    direction: null,
+                    directionTimeout: null,
+                    topNum: 0,
+                }),
+                computed: {
+                    glow() {
+                        if (!this.car.team) return {}
+                        return {
+                            boxShadow: `0 0 8px 3px ${this.car.team.color}`
+                        }
+                    },
+                    teamLogo() {
+                        if (!this.car.localDriverData) return {};
+                        let theme = this.car.localDriverData._slmnggTheme;
+                        if (!theme) return {};
+                        if (this.isSpectating && theme.logo_on_dark) return this.$root.bgWrap(theme.logo_on_dark[0].url);
+                        if (theme.small_logo) return this.$root.bgWrap(theme.small_logo[0].url);
+                        if (theme.default_logo) return this.$root.bgWrap(theme.default_logo[0].url);
+                    },
+                    teamDisplay() {
+                        if (["number", "stripe"].includes(this.$root.settings.driverDisplay)) return this.$root.settings.driverDisplay;
+                        if (this.$root.settings.driverDisplay === "logo") {
+                            return this.teamLogo.backgroundImage ? "logo" : "stripe"
+                        }
+                    },
+                    top() {
+                        console.log(this.leaderboardIndex);
+                        let num = (this.leaderboardIndex) * 34;
+                        return {
+                            top: `${(num) * 34}px`
+                        }
+                    },
+                    pos() { return this.car.pos },
+                    wingDamage() {
+                        try {
+                            return ['Left', 'Right'].map(dir => this.car.carDamage[`m_front${dir}WingDamage`])
+                        } catch (e) {
+                            return [];
+                        }
+                    },
+                    hasWingDamage() {
+                        return this.wingDamage.some(x => x > 0);
+                    },
+                    extraInfo() {
+                        let type = this.$root.settings.extraInfoType;
+                        if (!type) return;
+                        if (type === "stops") return this.plural(this.car.allCarData.m_numPitStops, "stop")
+                        if (type === "tyreAge") return this.plural(this.car.carStatus.m_tyresAgeLaps, "lap")
+                        if (type === "warnings") return this.car.persist.counts.warnings || 0
+                        if (type === "bestLap") return this.car.bestLapTime;
+                        if (type === "lastLap") return this.car.lastLapTime;
+                        if (type === "currentLap") return this.car.currentLapTime;
+                        if (type === "lapNum") return this.car.currentLapNum;
+                        if (type === "speed") return this.car.telemetry.m_speed;
+                        if (type === "wingDamage") {
+                            try {
+                                return ['Left', 'Right'].map(dir => {
+                                    let dmg = this.car.carDamage[`m_front${dir}WingDamage`];
+                                    return `<div class="wing${ dmg === 0 ? ' wing-none' : ''}" style="background-color:${this.getDamageColor(dmg)}"></div>`
+                                }).join(' ')
+                            } catch (e) { }
+                            return "";
+                        }
+                        if (type === "tyreWear") {
+                            try {
+                                if (this.car.carDamage.m_tyresWear[0] === 0) return "";
+                                return this.car.carDamage.m_tyresWear.map(e => `<div class="tyre-status" style="color:${this.getDamageColor(e)}">${Math.floor(e)}</div>`).join(' ')
+                            } catch (e) {
+
+                            }
+                            return "";
+                        }
+                        if (type === "steer") {
+                            let deg = (this.car.telemetry.m_steer) * 180
+                            return `<div class="wheel" style="transform: rotate(${deg}deg)"></div>`;
+                        }
+                        if (type === "grid") {
+                            let diff = this.car.gridDiff;
+                            let icon = (!diff ? "minus" : (diff > 0 ? "chevron-up" : "chevron-down"))
+                            let color = (!diff ? "" : (diff > 0 ? "lime" : "red"))
+                            return `<div style="width: 34px;margin-right:5px;">${this.car.gridPosition}</div><div style="color:${color};width:66px;text-align:left;"><i class="fas fa-fw fa-${icon}" style="margin-right: -2px;"></i> ${Math.abs(diff)}</div>`;
+                        }
+                        if (type === "sectors") {
+                     //        <div class="sector" v-for="(sector, sectorNum) in car.sectors"
+                     // :data-sector-color="sector.sectorTime !== '-:--.---' && sector.sectorColor"
+                     //    :title="sector.bestLapSectorTime">
+                     //            {{ sector.sectorTime }}
+                     //    </div>
+                            let text = [];
+                            function cleanText(n, sign) {
+                                if (n === null) return "--"
+                                return (sign ? (n > 0 ? '+' : '') : "") + (n / 1000).toFixed(Math.abs(n / 1000) >= 10 ? 0 : 1)
+                            }
+                            this.car.sectors.forEach((sector, sectorNum) => {
+                                let sectorText = !sector.sectorColor ? ((sector.sectorTime).slice(2,4)) : cleanText(sector.sectorDiff,true);
+                                text.push(`<div class="sx-sector" data-sector-color="${sector.sectorTime !== '-:--.---' && sector.sectorColor}">${sectorText}</div>`)
+                            })
+
+                            return text.join("");
+                        }
+                        if (["lapDiffP1", "lapDiffFastest", "lapDiffPurple", "lapDiffAllBest"].includes(type)) {
+                            // get diff between P1? or fastest
+                            // lapDiffP1,lapDiffFastest,lapDiffPurple
+
+
+                            if (["lapDiffPurple", "lapDiffAllBest"].includes(type) && this.$root.lapDiffMaster === this.$root.unText(this.car.bestLapTime)) {
+                                return `<span style="color:#A015BB">${this.car.bestLapTime}</span>`
+                            }
+
+                            let comparison = type === "lapDiffAllBest" ? this.car.bestLapTime : this.car.lastLapTime;
+                            let last = this.$root.unText(comparison)
+                            if (!last) return `<span class="lap-diff no-time">No time</span>`;
+
+                            let diff = last - this.$root.lapDiffMaster;
+
+                            if (type === "lapDiffP1" && this.car.pos === 1) {
+                                return this.car.lastLapTime;
+                            } else if ((type === "lapDiffFastest" || type === "lapDiffPurple") && diff === 0) {
+                                return this.car.lastLapTime;
+                            }
+
+                            let color = "white";
+                            if (type === "lapDiffP1") color = diff > 0 ? 'yellow' : 'lime';
+                            // console.log("lap diff", this.$root.lapDiffMaster, this.car.lastLapTime)
+                            return `<span class="lap-diff ${this.$root.leaderboard[0].currentLapNum !== this.car.currentLapNum && type !== "lapDiffAllBest" ?  'lap-alt' : 'lap-same'}" style="color: ${color}">${this.$root.parseDiff(diff, { htmlSign: true })}</span>`;
+
+                        }
+
+                        return null;
+                    },
+                    isInDanger() {
+                        if (!this.$root.showInDanger) return false;
+                        if (this.$root.sessionCode === "Q1" && this.pos > 15) return true;
+                        if (this.$root.sessionCode === "Q2" && this.pos > 10) return true;
+                        // todo: move danger sign
+                        return false;
+                    }
+                },
+                methods: {
+                    getDamageColor(num){
+                        return `rgb(${num * (256/100)},${256 - (num * (256/100))},0)`
+                    },
+                    plural(n, text, plural) {
+                        if (n === 1) return `${n} ${text}`
+                        if (plural) return `${n} ${plural}`
+                        return `${n} ${text}s`
+                    },
+                    heartbeat() {
+                        if (this.directionTimeout) clearTimeout(this.directionTimeout);
+                        this.directionTimeout = setTimeout(() => {
+                            this.direction = null;
+                        }, 3000)
+                    },
+                    getTopNum() {
+                        let base = this.leaderboardIndex * 34;
+                        if (this.showInDanger && this.isInDanger) {
+                            return (base + 20) + "px"
+                        }
+                        return base + "px"
+                    }
+                },
+                mounted(){
+                    console.log("new scoreboard item", this.getTopNum())
+                    this.topNum = this.getTopNum();
+                },
+                watch: {
+                    pos(newPos, oldPos) {
+                        if (newPos === oldPos) return;
+                        this.direction = newPos < oldPos ? "rising" : "falling";
+                        if (this.direction === "falling") {
+                            console.log("top style falling", oldPos, newPos, "falling by:",((oldPos - 1) * 34) - ((newPos - 1) * 34))
+                        }
+                        this.heartbeat();
+                    },
+                    leaderboardIndex(newNum, oldNum) {
+                        if (newNum === oldNum) return;
+                        requestAnimationFrame(() => {this.topNum = this.getTopNum();
+                        })
+                    },
+                    showInDanger(nn, oo) {
+                        if (nn === oo) return;
+                        requestAnimationFrame(() => {
+                            this.topNum = this.getTopNum();
+                        })
+                    },
+                    isInDanger(nn, oo) {
+                        if (nn === oo) return;
+                        requestAnimationFrame(() => {
+                            this.topNum = this.getTopNum();
+                        })
+                    }
+                },
+                template: `
+                    <div class="scoreboard-item" :style="{ top: topNum }"
+                         :class="{'falling': direction === 'falling' && !car.hidePos, 'rising': direction === 'rising', 'group-top': car.groupTop, 'group-middle': car.groupMiddle, 'group-bottom': car.groupBottom, 'is-in-danger': isInDanger}">
+                    <div class="scoreboard-internal">
+                        <div class="s-pos">
+                            <pos-component :pos="car.pos" :hide-text="car.hidePos"/>
+                        </div>
+                        <div class="s-team-display">
+                            <transition name="swipe-left" mode="out-in">
+                                <div class="s-team-stripe" key="stripe" v-if="teamDisplay === 'stripe'"
+                                     :style="{ backgroundColor: car.team && car.team.color }"></div>
+                                <div class="s-number" key="number" v-if="teamDisplay === 'number'">
+                                    <div class="glow" :style="glow"></div>
+                                    {{ car.carNumber }}
+                                </div>
+                                <div class="s-team-logo-holder" key="logo"
+                                     v-if="teamDisplay === 'logo' && car.localDriverData">
+                                    <div class="s-team-logo" :style="teamLogo"></div>
+                                </div>
+                            </transition>
+                        </div>
+                        <div class="s-driver-name">{{ car.name }}</div>
+                    </div>
+                    <div class="scoreboard-icons">
+                        <transition name="swipe-left">
+                            <div class="w-box pit" v-if="car.racing && car.pitStatus">PIT</div>
+                        </transition>
+                        <transition name="swipe-left">
+                            <div class="w-box warning"
+                                 v-if="car.racing && car.persist && car.persist.warning && !car.persist.penalty">W
+                            </div>
+                        </transition>
+                        <transition name="swipe-left">
+                            <div class="w-box penalty" v-if="car.racing && car.persist && car.persist.penalty">P</div>
+                        </transition>
+                        <div class="drs drs-charging" v-if="car.racing && car.drs.distance && $root.settings.showDRS"
+                             :style="$root.drsStyle(car.drs.distance)"><!--DRS--></div>
+                        <div class="drs drs-active" v-if="car.racing && car.drs.active && $root.settings.showDRS"><!--DRS--></div>
+                        <div class="ai" v-if="car.racing && car.ai">AI</div>
+                        <tyres v-if="car.racing" class="s-tyres" :tyres="car.tyres"></tyres>
+                        <div class="s-status" v-if="car.resultStatus === 7">DNF</div>
+                        <div class="s-status" v-if="car.resultStatus === 5">DSQ</div>
+                    </div>
+                    <transition name="swipe-right" mode="in-out">
+                        <div class="scoreboard-extra" v-if="$root.settings.showExtraInfo"
+                             :class="'sx-' + $root.settings.extraInfoType" :key="$root.settings.extraInfoType">
+                            <div class="sx-internal" v-html="extraInfo"></div>
+                        </div>
+                    </transition>
+                    <div class="scoreboard-mini-icons" :class="{'penalty-gap': car.persist.counts.penaltyTime || car.status === 3 }" v-if="car.racing">
+                        <transition name="swipe-right">
+                            <div class="si-wings" v-if="hasWingDamage">
+                                <div class="si-wing" v-for="wing in wingDamage" :style="{ backgroundColor: getDamageColor(wing) }">
+                                    <span>{{ wing }}</span>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+                    </div>`
+            },
+            SafetyCar: {
+                name: "SafetyCar",
+                props: ["status"],
+                data: () => ({
+                    small: false,
+                    visible: false,
+                    smallTO: null,
+                }),
+                computed: {
+                    sponsor() {
+                        if (this.state !== "SC") return null;
+                        try {
+                            return this.$root.settings.sponsorData.find(s => s.slot === "safety_car");
+                        } catch (e) { }
+                        return null;
+                    },
+                    state() {
+                        switch (this.status) {
+                            case "No Safety Car":
+                                return null
+                                break;
+                            case "Full Safety Car":
+                                return "SC"
+                                break;
+                            case "Virtual Safety Car":
+                                return "VSC"
+                                break;
+                            case "Formation Lap":
+                                return "FL"
+                                break;
+                        }
+                        return null;
+                    },
+                    logo() {
+                        return this.$root.bgWrap(this.sponsor.logo);
+                    }
+                },
+                mounted() {
+                    requestAnimationFrame(() => { this.visible = true; })
+                    this.unSmall();
+                },
+                watch: {
+                    state(newState) {
+                        console.log("safety car", newState);
+                        this.unSmall();
+                    }
+                },
+                methods: {
+                    unSmall() {
+                        this.small = false;
+                        if (this.smallTO) clearTimeout(this.smallTO);
+                        this.smallTO = setTimeout(() => {
+                            this.small = true;
+                        }, 12000);
+                    }
+                },
+                template: `
+                    <transition name="swipe-up" mode="in-out">
+                        <div class="safety-car big" v-if="visible && state && !small" :key="state + '-big'" :class="{'formation-lap': state === 'FL', 'vsc': state === 'VSC'}">
+                            <div class="sc-line" v-if="sponsor">
+                                <div class="sc-logo" :style="logo"></div>
+                                <div class="sc-sponsor-name">{{ sponsor.name }}</div>
+                            </div>
+                            <div class="sc-line" v-if="state === 'FL'">
+                                Formation Lap
+                            </div>
+                            <div class="sc-line" v-else>
+                                <span v-if="state === 'VSC'">Virtual </span>Safety Car
+                            </div>
+                        </div>
+                        <div class="safety-car small" v-if="visible && state && small && state !== 'FL'" :key="state + '-small'" :class="{'vsc': state === 'VSC'}">
+                            <div class="sc-line" v-if="sponsor">
+                                <div class="sc-logo" :style="logo"></div>
+                            </div>
+                            <div class="sc-line">
+                                {{ sponsor ? sponsor.name : "" }} {{ state === 'VSC' ? 'Virtual' : ''}} Safety Car
+                            </div>
+                        </div>
+                        <div class="safety-car small formation-lap" v-if="visible && state && small && state === 'FL'" :key="state + '-small-fl'">
+                            <div class="sc-line" v-if="sponsor">
+                                <div class="sc-logo" :style="logo"></div>
+                            </div>
+                            <div class="sc-line">
+                                Formation Lap
+                            </div>
+                        </div>
+                    </transition>`
+            },
+            SpectatedDriver: {
+                name: "SpectatedDriver",
+                props: ["car"],
+                components: { PosComponent },
+                data: () => ({
+                    teamTO: null,
+                    teamShow: false
+                }),
+                computed: {
+                    teamLogo() {
+                        if (!this.car.localDriverData) return {};
+                        if (this.car.team && this.car.team.logo) return this.$root.bgWrap(this.car.team.logo);
+                        // todo: other logo stuff here
+                        // console.log("logocar", this.car)
+                        let theme = this.car.localDriverData._slmnggTheme;
+                        if (!theme) return {};
+                        if (theme.small_logo) return this.$root.bgWrap(theme.small_logo[0].url);
+                        if (theme.default_logo) return this.$root.bgWrap(theme.default_logo[0].url);
+                    },
+                    carI() {
+                        if (this.car) return this.car.carI;
+                        return null
+                    }
+                },
+                watch: {
+                    carI (newI, oldI) {
+                        if (newI !== oldI) {
+                            this.showTeamName();
+                        }
+                    }
+                },
+                methods: {
+                    showTeamName() {
+                        this.teamShow = true;
+                        if (this.teamTO) clearTimeout(this.teamTO);
+                        this.teamTO = setTimeout(() => { this.teamShow = false}, 8000);
+                    }
+                },
+                template: `<div class="spectated-driver" v-if="car">
+<div class="sd-pos">
+    <pos-component :pos="car.pos"></pos-component>
+</div>
+<div class="sd-stripe">
+    <div class="sd-stripe-internal" v-if="car.team" :style="{backgroundColor: car.team.color }"></div>
+</div>
+<div class="sd-info">
+    <div class="sd-name">{{ car.name }}</div>
+    <transition name="swipe-up" mode="out-in">
+        <div class="sd-times" v-if="teamShow && car.team" key="team-name" :style="{ color: car.team.color }">
+            <div class="sd-part">{{ car.team.name }}</div>
+        </div>
+        <div class="sd-times" v-if="!teamShow" key="timings">
+            <div class="sd-part" v-if="!car.pitStatus">Sector {{ car.inSector }}</div>
+            <div class="sd-part" v-if="car.pitStatus">Pit lane</div>
+            <div class="sd-part">{{ car.currentLapTime }}</div>
+        </div>
+    </transition>
+</div>
+<div class="sd-right">
+    <div class="sd-team-logo" :style="teamLogo"></div>
+</div>
+</div>`
+            },
+            Weather: {
+                name: "Weather",
+                props: ["session"],
+                components: {
+                    WeatherPart: {
+                        name: "WeatherPart",
+                        props: ["weather"],
+                        template: `<div class="weather">
+                        <div class="w-time">{{ weather.m_timeOffset === 0 ? 'NOW' : '+' + weather.m_timeOffset + ' min' }}</div>
+                        </div>`
+                    }
+                },
+                data: () => ({
+                    sampleCount: 10,
+                    interval: 5
+                }),
+                computed: {
+                    weather() {
+                        // if (!this.session) return [];
+                        // let samples = [];
+                        //
+                        // for (let sample of this.session.weatherForecastSamples.filter((s, i) => i === 0 || s.m_timeOffset !== 0)) {
+                        //     samples.push(sample);
+                        //     if (samples.length === this.sampleCount) return samples;
+                        // }
+                        // return samples;
+                    }
+                },
+                template: `<transition name="swipe-right"><div id="weather-holder"><div id="weather">
+                    <div class="weather-samples"><WeatherPart v-for="sample in weather" :weather="sample"></WeatherPart></div>
+                </div></div></transition>`
+            }
         },
         data: {
             alerts: [],
+            recentSponsors: {},
             spectatingCar: null,
             leaderboard: [],
             session: null,
@@ -450,9 +1187,29 @@
                 leaderboardIcons: true,
                 podium: true,
                 driverGraphics: false
-            }
+            },
+            pitTiming: [],
+            showPits: [],
+            showFastest: false, fastestTimeout: null,
+            relaxedLeaderboard: []
         },
         methods: {
+            bgWrap(url) {
+                return { backgroundImage: `url(${url})` }
+            },
+            setSponsor(slot, timeout) {
+                if (!this.showSponsor(slot)) return;
+                console.log("[Sponsor slot]", slot, "held for", timeout)
+
+                Vue.set(this.recentSponsors, slot, setTimeout(() => {
+                    console.log("[Sponsor slot]", slot, "released")
+                    Vue.set(this.recentSponsors, slot, null);
+                }, timeout))
+            },
+            showSponsor(slot) {
+                console.log("[Sponsor slot]", slot, "held?=", !!this.recentSponsors[slot]);
+                return !this.recentSponsors[slot];
+            },
             podiumOrder(pI) {
                 // 2, 1, 3
                 if (pI === 2) return 1;
@@ -482,9 +1239,178 @@
                 return {
                     height: `${(1 - perc) * 26}px`
                 }
+            },
+            pitTimer(timer, car) {
+                let oldDataIndex = this.pitTiming.findIndex(c => c && c.carI === car.carI);
+                let oldData = this.pitTiming[oldDataIndex]
+
+                let newData = {
+                    carI: car.carI,
+                    ...(oldData || {})
+                };
+
+                if (timer === 0) {
+                    newData.state = "entry";
+                    newData.timer_total = new Date();
+                } else if (timer === 1) {
+                    newData.state = "stopped";
+                    newData.timer_stop = new Date();
+                } else if (timer === 2) {
+                    newData.state = "exit";
+                }
+
+                console.log("Pit update", car.carI, car.pos, newData.state, timer, car);
+                Vue.set(this.pitTiming, car.carI, newData);
+            },
+            zeroPad(num, size) {
+                return Math.abs(num).toString().padStart(size, "0")
+            },
+            parseDiff(ms, settings) {
+                if (ms === null) return "--.---";
+                let [s, sr] = [Math.floor(Math.abs(ms) / 1000), Math.abs(ms) % 1000]
+                let sign = ms > 0 ? "+" : "-";
+                if (settings && settings.htmlSign) {
+                    sign = `<span class="sign">${sign}</span>`
+                }
+                return `${sign}${this.zeroPad(s, 1)}.${this.zeroPad(sr, 3)}`
             }
         },
         computed: {
+            lapDiffMaster() {
+                let type = this.settings.extraInfoType;
+                if (type === "lapDiffP1") {
+                    return this.unText(this.leaderboard[0].lastLapTime);
+                }
+                if (type === "lapDiffFastest") {
+                    let order = this.leaderboard.map(car => this.unText(car.lastLapTime)).sort((a, b) => b - a).reverse();
+                    return order[0];
+                }
+                if (type === "lapDiffPurple") {
+                    return this.unText(this.fastestTime);
+                }
+                if (type === "lapDiffAllBest") {
+                    return this.unText(this.fastestTime);
+                }
+                return null;
+            },
+            sessionCode() {
+                try { return this.session.sessionType.short } catch (e) { }
+                return null;
+            },
+            isQualifying() {
+                return ["ShortQ", "Q", "Q1", "Q2", "Q3", "OneShotQ", "ShortFP"].includes(this.sessionCode);
+            },
+            showInDanger() {
+                return this.isQualifying && this.settings.showInDanger;
+            },
+            pitSponsor() {
+                try {
+                    return this.$root.settings.sponsorData.find(s => s.slot === "pit_timing") || null;
+                } catch (e) { }
+                return null;
+            },
+            dotdSponsor() {
+                try {
+                    return this.$root.settings.sponsorData.find(s => s.slot === "dotd") || null;
+                } catch (e) { }
+                return null;
+            },
+            podiumSponsor() {
+                try {
+                    let sponsor = this.$root.settings.sponsorData.find(s => s.slot === "podium");
+                    return sponsor || null
+                } catch (e) { }
+                return null;
+            },
+            zones() {
+                if (!this.session) return [];
+                let zones = this.session.m_marshalZones.filter((zone, i) => (i === 0 || zone.m_zoneStart !== 0))
+
+                zones.forEach((zone, i) => {
+                    if (i === zones.length - 1) {
+                        zone.m_zoneLength = 1 - zone.m_zoneStart;
+                        zone.m_zoneLengthPerc = `${zone.m_zoneLength * 100}%`;
+                        return;
+                    }
+                    zone.m_zoneEnd = zones[i+1].m_zoneStart;
+                    zone.m_zoneLength = zone.m_zoneEnd - zone.m_zoneStart;
+                    zone.m_zoneLengthPerc = `${zone.m_zoneLength * 100}%`;
+                })
+
+                return zones;
+            },
+            yellowFlags() {
+                return this.zones.some(z => z.m_zoneFlag === 3);
+            },
+            topText() {
+                switch (this.session.sessionType.short) {
+                    case "OneShotQ":
+                        return "One Shot"
+                        break;
+                    case "ShortFP":
+                        return "Practice"
+                        break;
+                    case "ShortQ":
+                    case "Q1":
+                    case "Q2":
+                    case "Q3":
+                        let time = this.session.m_sessionTimeLeft
+                        return `<span class="q-top">${this.session.sessionType.short === "ShortQ" ? "Q" : this.session.sessionType.short}</span><span class="q-time">${Math.floor(time / 60)}:${(time % 60).toString().padStart(2, "0")}</span>`;
+                        break;
+                }
+                if (this.session.safetyCarStatus === "Formation Lap") {
+                    return `0 / ${this.session.m_totalLaps}`
+                }
+                return `${this.completedLaps > this.session.m_totalLaps ? this.session.m_totalLaps : this.completedLaps} / ${this.session.m_totalLaps}`
+                // {{ completedLaps }} / {{ session.m_totalLaps }}
+            },
+            yellow() {
+                if (!this.session) return false;
+                return ["Full Safety Car", "Virtual Safety Car"].includes(this.session.safetyCarStatus)
+            },
+            completedLaps() {
+                try {
+                    return this.leaderboard[0].currentLapNum || "--";
+                } catch (e) { }
+                return "-"
+            },
+            extraInfoTitle() {
+                let type = this.$root.settings.extraInfoType;
+                if (!type) return;
+                if (type === "stops") return "Stops";
+                if (type === "tyreAge") return "Tyre Age";
+                if (type === "warnings") return "Warnings";
+                if (type === "bestLap") return "Best Lap";
+                if (type === "currentLap") return "Lap Time";
+                if (type === "lastLap") return "Last Lap";
+                if (type === "lapNum") return "Lap";
+                if (type === "grid") return "Grid";
+                if (type === "sectors") return "Sectors";
+                if (type === "speed") return "Speed";
+                if (type === "steer") return "Steering";
+                if (type === "tyreWear") return "Tyre Wear";
+                if (type === "wingDamage") return "Wings";
+                if (type === "lapDiffP1") return "Last Lap +/-";
+                if (type === "lapDiffFastest") return "Last Lap";
+                if (type === "lapDiffPurple") return "Last vs FL";
+                if (type === "lapDiffAllBest") return "Best Laps";
+
+                return null;
+            },
+            fastestLapSponsor() {
+                try {
+                    let sponsor = this.$root.settings.sponsorData.find(s => s.slot === "fastest_lap");
+                    if (!sponsor) return null;
+                    return {
+                        ...sponsor,
+                        logo: this.$root.bgWrap(sponsor.logo),
+                    }
+                } catch (e) { }
+                return {
+                    logo: {},
+                    text: ""
+                }
+            },
             isAI() {
                 // return true;
                 return this.spectatingCar && this.spectatingCar.isAI;
@@ -516,15 +1442,87 @@
                 let finishes = [];
                 if (this.spectatingCar.localDriverData) {
                     Object.entries(this.spectatingCar.localDriverData.finishes).forEach(([pos, count]) => {
+                        pos = parseInt(pos) + 1;
                         if ((count.toString() !== "0") && finishes.length !== 2) {
                             finishes.push(`${pos}${this.ordinal(pos)} x${count}`)
                         }
                     })
                 }
                 return {
+                    ...this.spectatingCar,
                     ...this.leaderboard.find(car => car.carI === this.spectatingCar.carI),
                     finishes: finishes.join(', ')
                 };
+            },
+            carsPitting() {
+                return this.showPits.map(num => this.leaderboard.find(car => car.carI === num && ![5, 7].includes(car.resultStatus) && car.currentLapTime !== "-:--.---")).filter(t => t);
+                // return this.leaderboard.filter(car => !(car.pitStatus === 0 || [5, 7].includes(car.resultStatus))).map(car => {
+                //     return {
+                //         ...car,
+                //         pitTimer: this.pitTiming[car.carI]
+                //     }
+                // });
+            },
+            sortedLeaderboard() {
+                if (this.settings.leaderboardSortTeams) {
+                    let groups = [];
+                    this.leaderboard.forEach(car => {
+                        let group = groups.find(g => g.name === car.team.name);
+                        if (!group) {
+                            groups.push({ name: car.team.name, cars: [] })
+                            group = groups[groups.length - 1];
+                        }
+                        group.cars.push(car);
+                    })
+
+                    let out = [];
+                    groups.forEach(g => g.cars.forEach((c, i) => out.push({
+                        ...c,
+                        groupTop: g.cars.length === 1 ? false : i === 0,
+                        groupBottom: g.cars.length === 1 ? false : i === g.cars.length - 1,
+                        groupMiddle: g.cars.length === 1 ? true : (!(i === 0 || i === g.cars.length - 1))
+                    })));
+                    return out;
+                }
+                return this.leaderboard;
+            }
+        },
+        watch: {
+            // simpleLeaderboard(newLeaderboard, oldLeaderboard) {
+            //     if (JSON.stringify(newLeaderboard) !== JSON.stringify(oldLeaderboard)) {
+            //         console.log("leaderboard update", newLeaderboard)
+            //         this.relaxedLeaderboard = newLeaderboard;
+            //     }
+            // },
+            // relaxedLeaderboard(l) {
+            //     console.log("relaxed", l)
+            // },
+            isQualifying(is) {
+                this.showPits = [];
+            },
+            leaderboard(newCars, oldCars) {
+                if (this.isQualifying) return;
+                newCars.forEach((car, i) => {
+                    if (oldCars[i] && car.pitStatus !== oldCars[i].pitStatus) {
+                        if (car.pitStatus === 0) {
+                            setTimeout(() => {
+                                console.log("[PS] removing", car.carI, "from pit display")
+                                // TODO: reenable
+                                this.showPits = this.showPits.filter(num => num !== car.carI);
+                            }, 10000);
+                        } else {
+                            if (!this.showPits.includes(car.carI)) this.showPits.push(car.carI)
+                        }
+                        console.log("[PS]", car.carI ,"Pit status change, now", car.pitStatus)
+                    }
+                })
+            },
+            fastestTime() {
+                this.showFastest = true;
+                if (this.fastestTimeout) clearInterval(this.fastestTimeout)
+                this.fastestTimeout = setTimeout(() => {
+                    this.showFastest = false;
+                }, 12000)
             }
         }
     })
@@ -568,8 +1566,14 @@
     }
 
     socket.on("leaderboard", data => {
-        app.leaderboard = data.filter(car => car.pos !== 0).sort(sortLeaderboard).map(car => {
+        app.leaderboard = data.filter(car => car.pos !== 0 && car.resultStatus !== 1).sort(sortLeaderboard).map(car => {
             let gridDiff = car.gridPosition - car.pos;
+            if (app.session && app.session.sessionType && ["ShortQ", "Q1", "Q2", "Q3"].includes(app.session.sessionType.short)) {
+                // qualifying
+                if (!car.bestLapTime || car.bestLapTime === "-:--.---") {
+                    car.hidePos = true;
+                }
+            }
             return {
                 ...car,
                 gridDiff
@@ -582,5 +1586,3 @@
     })
 
 </script>
-</body>
-</html>

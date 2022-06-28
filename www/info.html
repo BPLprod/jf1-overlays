@@ -63,6 +63,7 @@
         .buttons {
             margin-bottom: 8px;
             display: flex;
+            align-items: flex-start;
         }
 
         .f-button {
@@ -87,6 +88,11 @@
         .f-button-sub {
             min-width: 36px;
             text-align: center;
+        }
+
+        .f-button-sub.f-button-cycle {
+            min-width: 72px;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         .f-button-off.color {
@@ -127,6 +133,22 @@
             padding: 0 2px;
             font-weight: 400;
         }
+        .f-button.merge-left {margin-left: 0;}
+        .f-button.merge-left .f-button-text {margin-right: 0;}
+        .f-button-mini {padding: 1px 5px;}
+
+        .f-button-mini.on {background-color: rgba(255,255,255,0.1);}
+
+        .f-button-sub.f-button-cycle {padding: 1px 4px;}
+        .f-button-mini:hover {background-color: rgba(255,255,255,0.05);}
+
+        .tyre-wears {font-variant-numeric: tabular-nums;}
+
+        .tyre-wear {width: 3.5ex;display: inline-block;text-align: center;}
+
+        .wings {text-align: center;}
+
+        .wing {width: 3.5ex;text-align: center;display: inline-block;}
     </style>
     <link rel="stylesheet" href="https://slmn.io/fa-all.min.css"/>
 </head>
@@ -135,29 +157,40 @@
     <div class="buttons">
         <f-button mode="on-off" name="qualifying">Qualifying</f-button>
         <f-button mode="on-off" name="alerts">Alerts</f-button>
-        <f-button mode="on-off" name="spectatorSectors">Spectator Sectors</f-button>
+        <f-button mode="on-off" name="spectatorSectors">Sectors</f-button>
         <f-button mode="on-off" name="driverGraphics">Driver Graphics</f-button>
+        <f-button mode="on-off" name="spectateOverlay">Spectate Overlay</f-button>
+        <f-button mode="on-off" name="showDRS">DRS</f-button>
+        <f-button mode="on-off" name="dotd">DotD</f-button>
+        <f-button mode="on-off" name="showInDanger">Danger</f-button>
+        <f-button mode="on-off" name="redFlag">RED FLAG</f-button>
+        <f-button mode="on-off" name="ending">Ending</f-button>
     </div>
     <div class="buttons">
+        <f-button mode="on-off" name="showSafetyCar">SC</f-button>
         <f-button mode="on-off" name="showQualifyingFastest">QF</f-button>
-        <f-button mode="on-off" name="showQualifyingSpectating">QS</f-button>
-        <f-button mode="on-off" name="leaderboardIcons">Leaderboard Icons</f-button>
+<!--        <f-button mode="on-off" name="showQualifyingSpectating">QS</f-button>-->
+        <f-button mode="on-off" name="leaderboardIcons">Leaderboard</f-button>
         <f-button mode="on-off" name="podium">Podium</f-button>
+        <f-button mode="cycle" name="driverDisplay" options="stripe,logo,number">Driver Display</f-button>
+        <f-button mode="on-off" name="leaderboardSortTeams">Teams</f-button>
+        <f-button mode="on-off" name="showExtraInfo">Extra</f-button>
+        <f-button class="merge-left" mode="cycle" name="extraInfoType" options="stops,tyreAge,warnings,currentLap,lastLap,bestLap,lapNum,grid,sectors,speed,steer,tyreWear,wingDamage,lapDiffP1,lapDiffFastest,lapDiffPurple,lapDiffAllBest"></f-button>
     </div>
     <table v-if="leaderboardData?.[0]">
         <thead v-if="session" @click="extraData = !extraData">
             <tr>
-                <td colspan="50" class="status" :class="{ 'safety-car': session.m_safetyCarStatus && session?.m_safetyCarStatus !== 'No Safety Car' }">
-                    {{ session.m_sessionType?.short }} |
-                    {{ session.m_weather }} |
+                <td colspan="50" class="status" :class="{ 'safety-car': session.safetyCarStatus && session?.safetyCarStatus !== 'No Safety Car' }">
+                    {{ session.sessionType?.short }} |
+                    {{ session.weather }} |
                     {{ completedLaps }}/{{ session.m_totalLaps }}
 <!--                    {{ session.m_sessionDuration }}-->
 <!--                    {{ session.m_sessionTimeLeft }}-->
-                    {{ session.m_safetyCarStatus }}
+                    {{ session.safetyCarStatus }}
                     <span class="status-r">
                         Purple: <span v-for="sec in purple">{{ msToHMS(sec) }} </span>
                     </span>
-                    <!--  {{ session.m_safetyCarStatus === 2 ? 'VIRTUAL' : ''}} {{ session.m_safetyCarStatus ? 'SAFETY CAR' : ''}} -->
+                    <!--  {{ session.safetyCarStatus === 2 ? 'VIRTUAL' : ''}} {{ session.safetyCarStatus ? 'SAFETY CAR' : ''}} -->
                 </td>
             </tr>
         </thead>
@@ -168,11 +201,13 @@
         <th>Best Lap</th>
         <th>Lap</th>
         <th>Current</th>
+        <Th></Th>
         <th v-if="extraData">Sec</th>
-        <th>Sectors</th>
-        <th>Tyres</th>
+        <th @click="toggleSectors">{{ sectorType === "best-lap" ? "Best Lap " : ""}}Sectors</th>
+        <th colspan="2">Tyres</th>
         <th>Pen</th>
         <th>Pit</th>
+        <th>Wings</th>
         <th colspan="2">Grid</th>
         <th>DRS</th>
         <th>AI</th>
@@ -185,21 +220,22 @@
         <th v-if="extraData">Warnings</th>
         </thead>
         <tbody>
-        <tr v-for="(car, i) in leaderboardData" v-bind:key="car.carI" @click="focus === car.carI ? focus = null : focus = car.carI"
+        <tr v-for="(car, i) in leaderboardData" v-bind:key="car.carI"
             v-bind:class="{'is-spectating': car.carI === spectatingCar?.carI, 'is-focused': focus === car.carI, 'status--dnf': car.resultStatus === 7 || car.resultStatus === 4, 'status--dsq': car.resultStatus === 5 }">
             <!--        <td v-for="[key, val] in Object.entries(car)">-->
             <!--          {{ val }}-->
             <!--        </td>-->
             <td>P{{ car.pos }}</td>
-            <td class="team-slice" :style="{backgroundColor: car.team?.color}" :title="car.team?.name"></td>
+            <td class="team-slice" :style="{backgroundColor: car.team?.color}" :title="car.team?.name" @click="focus === car.carI ? focus = null : focus = car.carI"></td>
             <td>{{ car.name }}</td>
             <td :class="{'fastest': fastestCar && fastestCar.carI === car.carI}">{{ car.bestLapTime }}</td>
             <td>{{ car.currentLapNum }}</td>
             <td>{{ car.currentLapTime }}</td>
+            <td><input type="checkbox" @change="addCompareDriver($event, car)" :disabled="compareDrivers.length === 2 && !compareDrivers.some(c => c === car.carI)"></td>
             <td v-if="extraData">{{ car.inSector }}</td>
 
             <td class="sectors">
-                <div class="sector" v-for="(sector, sectorNum) in car.sectors"
+                <div class="sector" v-for="(sector, sectorNum) in (sectorType === 'current' ? car.sectors : getCarBestLapSectors(car))"
                      :data-sector-color="sector.sectorTime !== '-:--.---' && sector.sectorColor"
                      :title="sector.bestLapSectorTime">
                     {{ sector.sectorTime }}
@@ -211,11 +247,13 @@
                 {{ car.tyres.name.slice(0,1) }} {{ car.carStatus?.m_tyresAgeLaps }}
                 lap{{ car.carStatus?.m_tyresAgeLaps === 1 ? '' : 's' }}
             </td>
+            <td class="tyre-wears"><span class="tyre-wear" v-for="t in car.carDamage.m_tyresWear">{{ Math.floor(t) }}</span></td>
             <td>
                 {{ car.penalties > 0 ? `${car.penalties}s` : '' }}
                 {{ car.driveThroughs > 0 ? `DT${car.driveThroughs === 1 ? '' : ` x${car.driveThroughs}`}` : '' }}
             </td>
             <td>{{ car.allCarData.m_numPitStops }} stop{{ car.allCarData.m_numPitStops === 1 ? '' : 's' }} {{ car.pitStatus !== 0 ? `PIT ${car.pitStatus}` : '' }}</td>
+            <td class="wings"><span class="wing" v-for="w in [car.carDamage.m_frontLeftWingDamage, car.carDamage.m_frontRightWingDamage]">{{ Math.floor(w) }}</span></td>
             <td>{{ car.gridPosition }}</td>
             <td class="grid-diff" :style="{color: car.gridDiff > 0 ? 'lime' : car.gridDiff < 0 ? 'red' : ''}">
                 <i class="fas fa-fw fa-chevron-up" v-if="car.gridDiff > 0"></i>
@@ -224,7 +262,7 @@
                 <span v-if="car.gridDiff">{{ Math.abs(car.gridDiff) }}</span>
             </td>
 <!--            <td>{{ car.drs }}</td>-->
-            <td>{{ car.carStatus.m_drsAllowed }} {{ car.carStatus.m_drsActivationDistance }}</td>
+            <td>{{ car.carStatus && car.carStatus.m_drsAllowed }} {{ car.carStatus && car.carStatus.m_drsActivationDistance }}</td>
             <td>{{ car.ai ? 'AI': ''}}</td>
             <td v-if="extraData">{{ car.lastLapTime }}</td>
             <td v-if="extraData">i{{ car.carI }}</td>
@@ -235,6 +273,20 @@
             <td v-if="extraData">{{ car.localDriverData && car.localDriverData.lastRace ? `${ car.localDriverData.lastRace.rank || " -" }${ car.localDriverData.lastRace.fastestLap ? ' F' : ''}` : '' }}</td>
             <td v-if="extraData">{{ msToHMS(car.comparisonLap) }}</td>
             <td v-if="extraData">{{ car.persist.counts.warnings ? car.persist.counts.warnings + 'W ' : '' }}{{ car.persist.counts.penalty ? car.persist.counts.penalty + 'P ' + car.persist.counts.penaltyTime + 's ' : ''}}</td>
+<!--            <td v-if="extraData">-->
+<!--                <table>-->
+<!--                    <tr v-for="([a,b]) in Object.entries(car.telemetry)">-->
+<!--                        <td>{{ a }}</td><td>{{ b }}</td>-->
+<!--                    </tr>-->
+<!--                </table>-->
+<!--            </td>-->
+<!--            <td v-if="extraData">-->
+<!--                <table>-->
+<!--                    <tr v-for="([a,b]) in Object.entries(car.carDamage)">-->
+<!--                        <td>{{ a }}</td><td>{{ b }}</td>-->
+<!--                    </tr>-->
+<!--                </table>-->
+<!--            </td>-->
         </tr>
         </tbody>
     </table>
@@ -256,6 +308,11 @@
             <td>{{ lap.m_lapValidBitFlags }}</td>
         </tr>
     </table>
+
+    <div v-if="compareDrivers.length === 2">
+        <h3>Comparison</h3>
+        <compare-component :drivers="sortedCompareDrivers"></compare-component>
+    </div>
 
 <div class="sides">
     <div style="width: 620px;">
@@ -282,16 +339,7 @@
     </div>
     <div style="width: 454px;">
         <h3>Alerts</h3>
-        <div class="alert" v-for="alert in alerts" :key="alert.id" :data-key="alert.id" v-bind:key="alert.id">
-            <div class="alert-part alert-major" v-if="alert.major" :style="{ backgroundColor: alert.stripe, color: 'black' }">{{ alert.major }}</div>
-            <div class="alert-part alert-main">
-                <div class="alert-stripe" v-if="alert.stripe" :data-stripe="alert.stripe" :style="{ backgroundColor: alert.stripe }"></div>
-                <div class="alert-body">
-                    <div class="alert-title">{{ alert.title }}</div>
-                    <div class="alert-description">{{ alert.description }}</div>
-                </div>
-            </div>
-        </div>
+        <alert v-for="alert in alerts" :key="alert.id" :data-key="alert.id" :alert="alert"></alert>
     </div>
 <!--    <div style="max-width: 600px">-->
 <!--        <table v-if="spectatingCarData">-->
@@ -306,6 +354,7 @@
 <!--    <h3>Lap info</h3>-->
 </div>
 <script src="/socket.io/socket.io.js"></script>
+<script src="/shared.js"></script>
 <script>
     const socket = new io();
 
@@ -326,27 +375,107 @@
                 qualifying: true
             },
             extraData: false,
-            purple: null
+            purple: null,
+            compareDrivers: [],
+            sectorType: "current"
         },
         components: {
+            "CompareComponent": {
+                name: "CompareComponent",
+                props: ["drivers"],
+                computed: {
+                    sectorDiffs() {
+                        let sectors = [0,1,2];
+                        return sectors.map(secI => {
+                            let [b,a] = [this.drivers[0].sectors[secI], this.drivers[1].sectors[secI]];
+                            if (!(a.sectorColor && b.sectorColor)) {
+                                return "---"
+                            }
+                            let diff = a.sectorTimeMS - b.sectorTimeMS;
+                            if (isNaN(diff)) return "---"
+                            return {
+                                diff: this.$root.parseDiff(diff),
+                                ...this.$root.rawDiffColor(diff)
+                            }
+                        })
+                    }
+                },
+                template: `<table>
+                <tr>
+                    <th>Pos</th>
+                    <th></th>
+                    <th>Name</th>
+                    <th colspan="3">Sectors</th>
+                    <th>Lap</th>
+                </tr>
+                <tr v-for="car in drivers">
+                    <td>P{{ car.pos }}</td>
+                    <td class="team-slice" :style="{backgroundColor: car.team?.color}" :title="car.team?.name"></td>
+                    <td>{{ car.name }}</td>
+                    <td v-for="sector in car.sectors">
+                        {{ sector.sectorTime }}
+                    </td>
+                    <td>{{ car.inSector === 1 ? car.lastLapTime : car.currentLapTime }}</td>
+                </tr>
+                <tr>
+                    <td style="text-align:right" colspan="3">Diff</td>
+                    <td v-for="sec in sectorDiffs" :style="{color:sec.color}">
+                        {{ sec.diff }}
+                    </td>
+<!--                    <td>{{  }}</td>-->
+                </tr>
+                </table>`
+            },
+
+            Alert: AlertComponent,
             "FButton": {
                 name: "FButton",
-                props: ["mode", "name"],
+                props: ["mode", "name", "options"],
+                data: () => ({
+                    optionIndex: 0,
+                }),
                 computed: {
                     active() {
                         return this.$root.settings[this.name];
+                    },
+                    option() {
+                        return this._options[this.optionIndex];
+                    },
+                    _options() {
+                        return this.options.split(",")
                     }
                 },
-                template: `<div class="f-button" @click="() => $root.toggleSetting(name)">
+                methods: {
+                    click() {
+                        if (this.mode === "on-off") this.$root.toggleSetting(this.name);
+                        if (this.mode === "cycle") {
+                            this.optionIndex++;
+                            if (this.optionIndex >= this._options.length) this.optionIndex = 0;
+                            this.$root.setSetting(this.name, this.option)
+                        }
+                    },
+                },
+                template: `<div class="f-button">
                 <div class="f-button-text"><slot></slot></div>
-                <div class="f-button-clickable" v-if="mode === 'on-off'">
+                <div class="f-button-clickable" v-if="mode === 'on-off'"  @click="() => click()">
                     <div class="f-button-sub f-button-on" :class="{'color': active}">On</div>
                     <div class="f-button-sub f-button-off" :class="{'color': !active}">Off</div>
+                </div>
+<!--                <div class="f-button-clickable" v-if="mode === 'cycle'"  @click="() => click()">-->
+<!--                    <div class="f-button-sub f-button-cycle">{{ active }}</div>-->
+<!--                </div>-->
+                <div class="f-button-options" v-if="mode === 'cycle'">
+                    <div class="f-button-mini" :class="{'on': active === _option }" v-for="_option in _options" @click="() => $root.setSetting(name, _option)">
+                        {{ _option }}
+                    </div>
                 </div>
                 </div>`
             }
         },
         computed: {
+            sortedCompareDrivers() {
+                return this.compareDrivers.map(carI => this.leaderboardData.find(car => car.carI === carI)).filter(t => t && t.pos).sort((a,b) => a.pos - b.pos)
+            },
             nextToFinishLap() {
                 return [...this.leaderboardData].sort((a, b) => {
                     let [aHold, bHold] = [a,b].map(x => this.justFinishedLapData[x.carI]?.hold);
@@ -421,6 +550,32 @@
             }
         },
         methods: {
+            getCarBestLapSectors(car) {
+                let history = this.sessionHistory[car.carI];
+                console.log(history);
+                if (!history) return [{},{},{}];
+                let lap = history.m_lapHistoryData[history.m_bestLapTimeLapNum - 1]
+                if (!lap) return [{},{},{}];
+                return [1,2,3].map(sectorNum => ({
+                    sectorTime: this.msToHMS(lap[`m_sector${sectorNum}TimeInMS`]),
+                    sectorColor: history[`m_bestSector${sectorNum}LapNum`] === history.m_bestLapTimeLapNum ? "blue" : "white"
+                }))
+            },
+            toggleSectors() {
+                if (this.sectorType === "current") {
+                    this.sectorType = "best-lap"
+                    return;
+                }
+                this.sectorType = "current"
+                return;
+            },
+            addCompareDriver(e, car) {
+                if (e.target.checked) {
+                    this.compareDrivers.push(car.carI);
+                } else {
+                    this.compareDrivers.splice(this.compareDrivers.indexOf(car.carI), 1);
+                }
+            },
             toggleSetting(name) {
                 this.settings[name] = !this.settings[name];
 
@@ -437,6 +592,10 @@
                     name, value: this.settings[name]
                 })
             },
+            setSetting(name, value) {
+                this.settings[name] = value;
+                socket.emit("setting", { name, value })
+            },
             msToHMS(ms) {
                 if (!ms) return "-:--.---"
                 let [m, mr] = [Math.floor(ms / (60 * 1000)),ms % (60 * 1000)];
@@ -445,10 +604,19 @@
 
                 return `${m}:${this.zeroPad(s, 2)}.${this.zeroPad(sr, 3)}`
             },
+            msToMS(ms) {
+                if (!ms) return "--.---"
+                let mr = ms % (60 * 1000);
+                let [s, sr] = [Math.floor(mr / 1000), ms % 1000]
+                // console.log(m, mr);
+
+                return `${s}.${this.zeroPad(sr, 3)}`
+            },
             zeroPad(num, size) {
                 return Math.abs(num).toString().padStart(size, "0")
             },
             parseDiff(ms) {
+                if (ms === null) return "--.---";
                 let [s, sr] = [Math.floor(Math.abs(ms) / 1000), Math.abs(ms) % 1000]
                 return `${(ms > 0 ? "+" : "-")}${this.zeroPad(s, 1)}.${this.zeroPad(sr, 3)}`
             },
@@ -458,6 +626,11 @@
                 if (data.best) return { color: "#A015BB" }
                 return {
                     color: data.diff < 0 ? 'lime' : 'yellow'
+                }
+            },
+            rawDiffColor(num) {
+                return {
+                    color: num < 0 ? 'lime' : 'yellow'
                 }
             }
         }

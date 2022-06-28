@@ -304,7 +304,7 @@
                 template: `<div class="qualifying-widget" :class="{ 'fastest': highlightFastest }">
                 <div class="q-top q-text-top" v-if="highlightFastest">FASTEST</div>
                 <div class="q-top">
-                    <div class="q-pos" v-if="!highlightFastest">{{ car.pos }}</div>
+                    <div class="q-pos" v-if="!highlightFastest">{{ (!car.bestLapTime || car.bestLapTime === "-:--.---") ? '-' : car.pos }}</div>
                     <div class="q-stripe" :style="{ backgroundColor: car.team && car.team.color }"></div>
                     <div class="q-name">{{ car.name }}</div>
                     <div class="q-tyre">
@@ -405,13 +405,13 @@
                     let diff = b.allCarData.m_lapDistance - a.allCarData.m_lapDistance;
                     if (aHold && bHold) {
                         if (diff > 3000) {
-                            console.log("b ahead", b.pos, a.pos)
+                            // console.log("b ahead", b.pos, a.pos)
                             return -1;
                         } else if (diff < -3000) {
-                            console.log("a ahead", a.pos, b.pos)
+                            // console.log("a ahead", a.pos, b.pos)
                             return 1;
                         } else {
-                            console.log("ccc (normal)")
+                            // console.log("ccc (normal)")
                         }
                     }
                     return diff;
@@ -426,6 +426,8 @@
             nextQualifying() {
                 if (!this.settings.qualifying) return [];
                 return this.nextToFinishLap.filter(car => {
+                    let diffSum = car.sectors.filter(sector => !!sector.sectorColor).reduce((a, c) => a += c.sectorDiff, 0)
+                    return diffSum <= 2000;
                     return true;
                     if (car.sectors.some(s => s.inSector)) {
                         // is still on that lap
@@ -467,7 +469,7 @@
                 return Math.abs(num).toString().padStart(size, "0")
             },
             parseDiff(ms) {
-                console.log(ms);
+                // console.log(ms);
                 if (ms === null) return "--.---";
                 let [s, sr] = [Math.floor(Math.abs(ms) / 1000), Math.abs(ms) % 1000]
                 return `${(ms > 0 ? "+" : "-")}${this.zeroPad(s, 1)}.${this.zeroPad(sr, 3)}`
