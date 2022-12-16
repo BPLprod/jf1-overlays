@@ -169,13 +169,13 @@
     <div class="buttons">
         <f-button mode="on-off" name="showSafetyCar">SC</f-button>
         <f-button mode="on-off" name="showQualifyingFastest">QF</f-button>
-<!--        <f-button mode="on-off" name="showQualifyingSpectating">QS</f-button>-->
+        <f-button mode="on-off" name="showQualifyingSpectating">QS</f-button>
         <f-button mode="on-off" name="leaderboardIcons">Leaderboard</f-button>
         <f-button mode="on-off" name="podium">Podium</f-button>
         <f-button mode="cycle" name="driverDisplay" options="stripe,logo,number">Driver Display</f-button>
         <f-button mode="on-off" name="leaderboardSortTeams">Teams</f-button>
         <f-button mode="on-off" name="showExtraInfo">Extra</f-button>
-        <f-button class="merge-left" mode="cycle" name="extraInfoType" options="stops,tyreAge,warnings,currentLap,lastLap,bestLap,lapNum,grid,sectors,speed,steer,tyreWear,wingDamage,lapDiffP1,lapDiffFastest,lapDiffPurple,lapDiffAllBest"></f-button>
+        <f-button class="merge-left" mode="cycle" name="extraInfoType" options="stops,tyreAge,warnings,currentLap,lastLap,bestLap,lapNum,grid,sectors,speed,steer,tyreWear,wingDamage,lapDiffP1,lapDiffFastest,lapDiffPurple,lapDiffAllBest,ers,raceStart"></f-button>
     </div>
     <table v-if="leaderboardData?.[0]">
         <thead v-if="session" @click="extraData = !extraData">

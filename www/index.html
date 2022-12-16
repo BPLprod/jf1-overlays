@@ -527,6 +527,16 @@
         .scoreboard-mini-icons.penalty-gap {
             left: calc(384px + 41px);
         }
+        .ers-deploy {
+            color: #00ffff;
+        }.ers-text {
+             min-width: 5.7ex;
+             display: inline-block;
+         }
+        .ers.ers-deploy.drs-active .ers-text {
+            text-shadow: 0px 0px 5px lime;
+            color: lime;
+        }
     </style>
 <!--    <style data-for="af2">-->
 <!--        #f1-top, #fastest-lap, .spectated-driver {background-color: white;color: #043961;}-->
@@ -547,7 +557,7 @@
     </transition>
 
     <transition name="swipe-down">
-        <div id="scoreboard" v-if="settings.leaderboardIcons" :style="{height: `${(leaderboard.length * 34) + (showInDanger ? 20 : 0)}px`}" :class="{'leaderboard-sort-teams': settings.leaderboardSortTeams}">
+        <transition-group name="list" id="scoreboard" v-if="settings.leaderboardIcons" :style="{height: `${(leaderboard.length * 34) + (showInDanger ? 20 : 0)}px`}" :class="{'leaderboard-sort-teams': settings.leaderboardSortTeams}">
             <leaderboard-item v-for="(car, i) in sortedLeaderboard" :leaderboard-index="i" :key="car.carI" :car="car"
                               :show-in-danger="showInDanger"
                               :is-spectating="spectatingCar && car.carI === spectatingCar.carI"
@@ -560,7 +570,7 @@
             <transition name="fade">
                 <div id="in-danger" v-if="showInDanger">Drivers in danger</div>
             </transition>
-        </div>
+        </transition-group>
     </transition>
     <transition name="swipe-up">
         <div id="scoreboard-extra-title" class="scoreboard-extra"  v-if="settings.showExtraInfo && settings.leaderboardIcons" v-html="extraInfoTitle" :key="$root.settings.extraInfoType"></div>
@@ -743,6 +753,7 @@
                     direction: null,
                     directionTimeout: null,
                     topNum: 0,
+                    changed: false
                 }),
                 computed: {
                     glow() {
@@ -782,6 +793,16 @@
                     },
                     hasWingDamage() {
                         return this.wingDamage.some(x => x > 0);
+                    },
+                    changedExtraInfo() {
+                        if (!this.changed) return null;
+                        let type = this.$root.settings.extraInfoType;
+                        if (!type) return null;
+                        if (["lapDiffAllBest"].includes(type)) {
+                            if (this.$root.lapDiffMaster === this.$root.unText(this.car.bestLapTime)) return `<span style="color:lime">${this.car.bestLapTime}</span>`
+                            return `<span style="color:lime">${this.car.bestLapTime}</span>`
+                        }
+                        return null;
                     },
                     extraInfo() {
                         let type = this.$root.settings.extraInfoType;
@@ -867,6 +888,36 @@
                             return `<span class="lap-diff ${this.$root.leaderboard[0].currentLapNum !== this.car.currentLapNum && type !== "lapDiffAllBest" ?  'lap-alt' : 'lap-same'}" style="color: ${color}">${this.$root.parseDiff(diff, { htmlSign: true })}</span>`;
 
                         }
+                        if (type === "ers") {
+                            if (!this.car.carStatus) return "";
+                            if (!this.car.carStatus.m_ersStoreEnergy) return "";
+                            let percentage = `${(this.car.carStatus.m_ersStoreEnergy / 40000).toFixed(0)}%`;
+                            if (this.car.carStatus.m_ersDeployMode === 3) return `<span class="ers ers-deploy${this.car.drs.active ? ' drs-active' : ''}"><i class="ers-icon fa fa-battery-bolt text-battery-active"></i> <span class="ers-text">${percentage}</span></span>`;
+
+                            let icons = ["empty", "quarter", "half", "three-quarters", "full"];
+                            let fillLevel = this.car.carStatus.m_ersStoreEnergy / 40000;
+                            let max = [...icons.reverse()].find((icon, i) => fillLevel > ((100 / icons.length) * (icons.length - i - 1)))
+                            return `<span class="ers${this.car.drs.active ? ' drs-active' : ''}"><i class="ers-icon fa fa-battery-${max || 'empty'}"></i> <span class="ers-text">${percentage}</span></span>`;
+                        }
+                        if (type === "raceStart") {
+                            if (!this.car.telemetry) return "";
+                            if (!raceStarts[this.car.carI]) return `<span class="race-start speed">${this.car.telemetry.m_speed}</span>`;
+
+                            let allStartsMS = raceStarts.map(r => r - raceStartTimestamp).filter(r => r <= 10000);
+                            let thisStart = raceStarts[this.car.carI] - raceStartTimestamp;
+                            let min = Math.min(...allStartsMS);
+                            let max = Math.max(...allStartsMS);
+                            let range = max - min;
+                            let perc = (max - thisStart) / range;
+
+                            function getRelativeColor(percentage) {
+                                return `color: rgb(${(1 - percentage) * 255}, ${percentage * 255}, 0)`
+                            }
+
+                            // console.log({ thisStart, min, max, range, perc, col: getRelativeColor(perc) })
+
+                            return `<span class="race-start time" style="${getRelativeColor(perc)}">${((raceStarts[this.car.carI] - raceStartTimestamp) / 1000).toFixed(2)}s</span>`
+                        }
 
                         return null;
                     },
@@ -906,6 +957,18 @@
                     this.topNum = this.getTopNum();
                 },
                 watch: {
+                    extraInfo(newPos, oldPos) {
+                        // console.log({
+                        //     newPos, oldPos, i: this.car.i
+                        // })
+                        if (newPos !== oldPos) {
+                            if (this.changeTimeout) clearTimeout(this.changeTimeout);
+                            this.changed = true;
+                            this.changeTimeout = setTimeout(() => {
+                                this.changed = false;
+                            }, 5000)
+                        }
+                    },
                     pos(newPos, oldPos) {
                         if (newPos === oldPos) return;
                         this.direction = newPos < oldPos ? "rising" : "falling";
@@ -977,8 +1040,8 @@
                     </div>
                     <transition name="swipe-right" mode="in-out">
                         <div class="scoreboard-extra" v-if="$root.settings.showExtraInfo"
-                             :class="'sx-' + $root.settings.extraInfoType" :key="$root.settings.extraInfoType">
-                            <div class="sx-internal" v-html="extraInfo"></div>
+                             :class="'sx-' + $root.settings.extraInfoType + ' ' + (changed ? 'changed' : '')" :key="$root.settings.extraInfoType">
+                            <div class="sx-internal" v-html="changedExtraInfo || extraInfo"></div>
                         </div>
                     </transition>
                     <div class="scoreboard-mini-icons" :class="{'penalty-gap': car.persist.counts.penaltyTime || car.status === 3 }" v-if="car.racing">
@@ -1394,6 +1457,8 @@
                 if (type === "lapDiffFastest") return "Last Lap";
                 if (type === "lapDiffPurple") return "Last vs FL";
                 if (type === "lapDiffAllBest") return "Best Laps";
+                if (type === "ers") return "ERS";
+                if (type === "raceStart") return "Race Start";
 
                 return null;
             },
@@ -1455,6 +1520,7 @@
                 };
             },
             carsPitting() {
+                if (this.settings.podium) return [];
                 return this.showPits.map(num => this.leaderboard.find(car => car.carI === num && ![5, 7].includes(car.resultStatus) && car.currentLapTime !== "-:--.---")).filter(t => t);
                 // return this.leaderboard.filter(car => !(car.pitStatus === 0 || [5, 7].includes(car.resultStatus))).map(car => {
                 //     return {
@@ -1574,6 +1640,12 @@
                     car.hidePos = true;
                 }
             }
+            if (raceStartTimestamp !== null && !raceStarts[car.carI]) {
+                if (car.telemetry.m_speed >= 100) {
+                    raceStarts[car.carI] = new Date();
+                    console.log("RACE START", car.carI, car.telemetry.m_speed);
+                }
+            }
             return {
                 ...car,
                 gridDiff
@@ -1583,6 +1655,18 @@
     socket.on("settings", settings => {
         console.log(settings);
         app.settings = settings;
+    })
+    let raceStartTimestamp = null;
+    let raceStarts = [];
+    // socket.on("event-SSTA", (event) => {
+    //     console.log("race started");
+    //     raceStartTimestamp = new Date();
+    //     raceStarts = [];
+    // })
+    socket.on("event-LGOT", (event) => {
+        console.log("race started?");
+        raceStartTimestamp = new Date();
+        raceStarts = [];
     })
 
 </script>

@@ -5,7 +5,7 @@ const PosComponent = {
 }
 const TyreComponent = {
     name: "Tyres",
-    props: ["tyres", "showLaps"],
+    props: ["tyres", "showLaps", "adjust"],
     computed: {
         color() {
             if (this.tyres) return this.tyres.color;
@@ -23,7 +23,7 @@ const TyreComponent = {
     template: `<div class="tyre">
                         <div class="tyres-text">{{ letter }}</div>
                         <div class="tyres-color" :style="{ borderColor: color }"></div>
-                        <div class="tyres-laps" v-if="showLaps">{{ laps }}</div>
+                        <div class="tyres-laps" v-if="showLaps">{{ laps + (adjust || 0) }}</div>
                     </div>`
 }
 
@@ -115,7 +115,7 @@ const PitComponent = {
         <div class="pit-right" :style="{color: pitTime ? color : null}">{{ stopTime }}</div>
     </div>
     <div class="pit-screen pit-screen-tyres" v-if="screen === 'tyres'" key="tyres">
-        <tyres class="tyres-off" :tyres="tyresOff" :showLaps="true"></tyres>
+        <tyres class="tyres-off" :tyres="tyresOff" :showLaps="true" :adjust="1"></tyres>
         <div class="tyre-arrow" v-if="tyresOn" >→</div>
         <tyres class="tyres-on" v-if="tyresOn"  :tyres="tyresOn" :showLaps="true"></tyres>
     </div>

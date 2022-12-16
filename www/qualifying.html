@@ -44,7 +44,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             padding: 0 2px;
             flex-shrink: 0;
@@ -230,6 +230,25 @@
             /* width: 50% !important; */
         }
         .q-bottom-part.multi .q-bottom-num { font-size: 0.9em }
+
+        .quali-part-enter-active, .quali-part-leave-active {
+            transition: all 150ms ease;
+            --swipe-size: 15%
+        }
+        .quali-part-enter {
+            opacity: 0;
+            transform: translate(0, var(--swipe-size));
+            /*transform: translate(var(--swipe-size), 0);*/
+        }
+        .quali-part-leave-to {
+            opacity: 0;
+            transform: translate(0, calc(var(--swipe-size) * -1));
+            /*transform: translate(calc(var(--swipe-size) * -1), 0);*/
+        }
+        .quali-part-leave, .quali-part-enter-to {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
     </style>
 </head>
 <body class="main">
@@ -248,7 +267,7 @@
 
     <transition-group tag="div" id="qualifying-graphics" name="list">
         <qualifying-widget v-if="fastestCar && settings.showQualifyingFastest" :car="fastestCar" class="fastest" key="fastest-car" :highlight-fastest="true"></qualifying-widget>
-        <qualifying-widget v-for="car in nextQualifying" v-bind:key="car.carI" :car="car" :class="{'is-spectating': settings.showQualifyingSpectating && car.carI === spectatingCar.carI}"></qualifying-widget>
+        <qualifying-widget v-for="car in nextQualifying" :comparison-car="fastestCar" v-bind:key="car.carI" :car="car" :class="{'is-spectating': settings.showQualifyingSpectating && car.carI === spectatingCar.carI}"></qualifying-widget>
     </transition-group>
 </div>
 <script src="/socket.io/socket.io.js"></script>
@@ -271,7 +290,11 @@
         components: {
             "QualifyingWidget": {
                 name: "QualifyingWidget",
-                props: ["car", "highlightFastest"],
+                props: ["car", "highlightFastest", "comparisonCar"],
+                data: () => ({
+                    showSectorComparison: false,
+                    comparisonSector: null
+                }),
                 computed: {
                     justFinishedData() {
                         return this.$root.justFinishedLapData[this.car.carI]
@@ -290,7 +313,7 @@
                         let fastestLap = this.car.comparisonLap;
                         if (!fastestLap) return null;
                         let diff = lastLap - fastestLap;
-                        console.log(this.car.carI, "last", lastLap, "fastest", fastestLap, "diff", diff)
+                        // console.log(this.car.carI, "last", lastLap, "fastest", fastestLap, "diff", diff)
                         return diff;
                     },
                     lastLapColor() {
@@ -299,6 +322,72 @@
                         if (this.lastLapDiff < 0) return { color: "lime" };
                         if (!this.lastLapDiff) return {};
                         return { color: "yellow" };
+                    },
+                    sector() {
+                        return this.car.inSector;
+                    },
+                    sectorTimeDisplay() {
+                        return this.getSectorsTotal(this.car);
+                    },
+                    comparisonSectorDiff() {
+                        if (!this.comparisonCar) return null;
+                        return this.getSectorsTotal(this.car) - this.getBestLapSectorsTotal(this.comparisonCar);
+                    },
+                    state() {
+                        if (this.highlightFastest) return "fastest";
+                        if (this.lapFinished) return "lap-result"
+                        if (this.showSectorComparison) return "sector-result"
+                        // showSectorComparison
+                        // lapFinished
+                        return "default";
+                    }
+                },
+                watch: {
+                    sector(newSector, oldSector) {
+                        console.log(`sector ${oldSector} -> ${newSector}`)
+                        this.showSectorComparison = true;
+                        this.comparisonSector = oldSector;
+                        setTimeout(() => {
+                            this.showSectorComparison = false;
+                            this.comparisonSector = null;
+                        }, 6000);
+                    }
+                },
+                methods: {
+                    getSectorsTotal(car, sector) {
+                        // sector 1
+                        // sec 1 + 2
+                        // lap time
+                        switch (sector || this.comparisonSector) {
+                            case 1: {
+                                return car.sectors[0].sectorTimeMS
+                            }
+                            case 2: {
+                                return car.sectors[0].sectorTimeMS + car.sectors[1].sectorTimeMS;
+                            }
+                            case 3: {
+                                return car.sectors[0].sectorTimeMS + car.sectors[1].sectorTimeMS + car.sectors[2].sectorTimeMS;
+                            }
+                        }
+                    },
+                    getBestLapSectorsTotal(car, sector) {
+                        if (!car || !car.bestLap) return null;
+                        // sector 1
+                        // sec 1 + 2
+                        // lap time
+                        switch (sector || this.comparisonSector) {
+                            case 1: { return car.bestLap.m_sector1TimeInMS }
+                            case 2: { return car.bestLap.m_sector1TimeInMS + car.bestLap.m_sector2TimeInMS; }
+                            case 3: { return car.bestLap.m_sector1TimeInMS + car.bestLap.m_sector2TimeInMS + car.bestLap.m_sector3TimeInMS; }
+                        }
+                    },
+                },
+                filters: {
+                    diff(val) {
+                        return app.parseDiff(val)
+                    },
+                    ms(val) {
+                        return app.msToMS(val)
                     }
                 },
                 template: `<div class="qualifying-widget" :class="{ 'fastest': highlightFastest }">
@@ -313,34 +402,53 @@
                     </div>
                 </div>
                 <div class="q-bottom">
-                    <div class="q-bottom-part" v-if="highlightFastest">
+                    <transition mode="out-in" name="quali-part">
+                    <div class="q-bottom-part" v-if="state === 'fastest'" key="best-lap">
                         <div class="q-bottom-text">Best Lap</div>
                         <div class="q-bottom-num big">{{ car.bestLapTime }}</div>
                     </div>
-                    <div class="q-bottom-part" v-if="!highlightFastest">
-                        <div class="q-bottom-text">{{ lapFinished ? 'Last Lap' : 'Live' }}</div>
-                        <div class="q-bottom-num" :style="lastLapColor">{{ lapFinished ? car.lastLapTime : car.currentLapTime.slice(0, -2) }}</div>
-                    </div>
-                    <div class="q-bottom-part" v-if="!highlightFastest && !lapFinished">
+                    </transition>
+                    <transition mode="out-in" name="quali-part">
+                        <div class="q-bottom-part" v-if="state === 'default'" key="lap-time">
+                            <div class="q-bottom-text">{{ lapFinished ? 'Last Lap' : 'Live' }}</div>
+                            <div class="q-bottom-num" :style="lastLapColor">{{ lapFinished ? car.lastLapTime : car.currentLapTime.slice(0, -2) }}</div>
+                        </div>
+                        <div class="q-bottom-part" v-if="state === 'sector-result'" key="sector-time">
+                            <div class="q-bottom-text">Sector {{ sector - 1 }}</div>
+                            <div class="q-bottom-num big">{{ sectorTimeDisplay | ms }}</div>
+                        </div>
+                        <div class="q-bottom-part" v-if="state === 'lap-result'" key="best-time">
+                            <div class="q-bottom-text">Best</div>
+                            <div class="q-bottom-num" :style="$root.fastestTime === car.lastLapTime ? { color: '#A015BB' } : $root.rawDiffColor(lastLapDiff)">{{ lapFinished ?  car.lastLapTime : car.bestLapTime.slice(0, -2) }}</div>
+                            <!--                        <div class="q-bottom-num">c {{ $root.msToHMS(car.comparisonLap) }}</div>-->
+                        </div>
+                    </transition>
+                    <transition mode="out-in" name="quali-part">
+                        <div class="q-bottom-part" v-if="state === 'sector-result'" key="diff-to-pole">
+                            <div class="q-bottom-text">To Pole</div>
+                            <div class="q-bottom-num big" :style="$root.rawDiffColor(comparisonSectorDiff)">{{ comparisonSectorDiff | diff }}</div>
+                        </div>
+                    <div class="q-bottom-part" v-if="state === 'default'" key="best-time">
                         <div class="q-bottom-text">Best</div>
-                        <div class="q-bottom-num" :style="lapFinished ? $root.rawDiffColor(lastLapDiff) : {}">{{ lapFinished ?  $root.parseDiff(lastLapDiff) : car.bestLapTime.slice(0, -2) }}</div>
+                        <div class="q-bottom-num">{{ lapFinished ?  car.lastLapTime : (sector === 3 ? car.bestLapTime.slice(0, -2) : $root.msToMS(getBestLapSectorsTotal(car, sector))) }}</div>
 <!--                        <div class="q-bottom-num">c {{ $root.msToHMS(car.comparisonLap) }}</div>-->
                     </div>
-                    <div class="q-bottom-part multi" v-if="!highlightFastest && lapFinished">
-                        <div class="q-bottom-row">
-                            <div class="q-bottom-text">Pole</div>
-                            <div class="q-bottom-num" :style="$root.diffColor(car.carI)">{{ $root.parseDiff(justFinishedData.diff).slice(0, -2) }}</div>
+                        <div class="q-bottom-part multi" v-if="state === 'lap-result'" key="lap-result">
+                            <div class="q-bottom-row">
+                                <div class="q-bottom-text">Pole</div>
+                                <div class="q-bottom-num" :style="$root.diffColor(car.carI)">{{ $root.parseDiff(justFinishedData.diff).slice(0, -2) }}</div>
+                            </div>
+                            <div class="q-bottom-row">
+                                <div class="q-bottom-text">Self</div>
+                                <div class="q-bottom-num" :style="$root.rawDiffColor(lastLapDiff)">{{ $root.parseDiff(lastLapDiff).slice(0, -2) }}</div>
+                            </div>
                         </div>
-                        <div class="q-bottom-row">
-                            <div class="q-bottom-text">Self</div>
-                            <div class="q-bottom-num" :style="$root.rawDiffColor(lastLapDiff)">{{ $root.parseDiff(lastLapDiff).slice(0, -2) }}</div>
-                        </div>
-                    </div>
+                    </transition>
 <!--                    {{ highlightFastest ? car.bestLapTime : ($root.justFinishedLapData[car.carI] && $root.justFinishedLapData[car.carI].hold ? $root.parseDiff($root.justFinishedLapData[car.carI].diff) : car.currentLapTime.slice(0, -2)) }}-->
                 </div>
-                <div class="q-sectors" v-if="!highlightFastest">
+                <div class="q-sectors" v-if="state !== 'fastest'">
                     <div class="q-sector" v-for="(sector, i) in car.sectors" :key="i" :data-sector-color="highlightFastest ? '' : sector.sectorColor">
-                        <span>{{ highlightFastest ? sector.bestLapSectorTime : (sector.sectorColor ? $root.parseDiff(sector.sectorDiff) : $root.msToMS(sector.sectorTimeMS)) }}</span>
+                        <span>{{ highlightFastest ? sector.bestLapSectorTime : (sector.sectorColor ? (sector.sectorDiff ? $root.parseDiff(sector.sectorDiff) : $root.msToMS(sector.sectorTimeMS)) : $root.msToMS(sector.sectorTimeMS)) }}</span>
                     </div>
                 </div>
                 </div>`
@@ -367,7 +475,7 @@
                         };
                         setTimeout(() => {
                             this.justFinishedLapData[newCar.carI].hold = false;
-                        }, 10000)
+                        }, 7000)
                     }
                 })
             },
@@ -384,7 +492,7 @@
                 cars.forEach(c => {
                     if (this.justFinishedLapData[c.carI] && this.justFinishedLapData[c.carI].hold) finishes.push(c);
                 })
-                if (finishes.length === cars.length && cars.length > 0) {
+                if (finishes.length === 3 && cars.length > 0) {
                     console.log(finishes, cars)
                     console.log("hiding car", cars[0], cars[0].pos)
                     this.justFinishedLapData[cars[0].carI].hide = true;

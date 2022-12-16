@@ -234,6 +234,20 @@ io.on("connection", (socket) => {
     socket.on("setting", ({ name, value }) => {
         settings[name] = value;
         io.sockets.emit("settings", settings);
+
+        console.log({ name, value })
+
+        if (name === "showDRS" && value === false) {
+            [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(i => {
+                cache[`drs-${i}-active`] = false;
+                cache[`drs-${i}-counted-down`] = false;
+                cache[`drs-${i}-nodisable`] = false;
+            })
+            sendAlert({
+                duration: 4000, short_title: "INFO", title: "DRS Data Hidden",
+                description: "DRS will be shown from the next detection zone", stripe: "lime"
+            })
+        }
     })
 });
 
@@ -260,6 +274,7 @@ function sendAlert(alert) {
 const client = new F1TelemetryClient();
 
 client.on(PACKETS.event, event => {
+    delete event.m_header.m_sessionUID;
     if (event.m_eventStringCode === "SPTP") {
         let driver = getDriver(event.m_eventDetails.vehicleIdx);
         event.m_eventDetails.driver = driver;
@@ -287,7 +302,12 @@ client.on(PACKETS.event, event => {
 
     if (!["SPTP", "PENA"].includes(event.m_eventStringCode)) console.log(event.m_eventStringCode, event.m_eventDetails);
 
+    if (event.m_eventStringCode === "LGOT") {
+        io.sockets.emit("event-LGOT", event);
+
+    }
     if (event.m_eventStringCode === "SSTA") {
+        io.sockets.emit("event-SSTA", event);
         settings["leaderboardIcons"] = true;
         settings["spectateOverlay"] = true;
         settings["podium"] = false;
@@ -303,6 +323,8 @@ client.on(PACKETS.event, event => {
             settings["qualifying"] = false;
             settings["alerts"] = true;
         }
+        settings["showExtraInfo"] = true;
+        settings["extraInfoType"] = "raceStart";
 
         io.sockets.emit("settings", settings);
     }
@@ -315,7 +337,9 @@ client.on(PACKETS.event, event => {
         // DRS off
         console.log("DRS OFF?");
         [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(i => {
-            cache[`DRS-${i}-active`] = false;
+            cache[`drs-${i}-active`] = false;
+            cache[`drs-${i}-counted-down`] = false;
+            cache[`drs-${i}-nodisable`] = false;
         })
     }
 
@@ -477,7 +501,10 @@ client.on(PACKETS.sessionHistory, (history) => {
     cache["sessionHistory"][history.m_carIdx] = history;
 
 
-    if (history.m_lapHistoryData[history.m_bestLapTimeLapNum - 1]) cache[`car-bestlap-time-${history.m_carIdx}`] = history.m_lapHistoryData[history.m_bestLapTimeLapNum - 1].m_lapTimeInMS;
+    if (history.m_lapHistoryData[history.m_bestLapTimeLapNum - 1]) {
+        cache[`car-bestlap-time-${history.m_carIdx}`] = history.m_lapHistoryData[history.m_bestLapTimeLapNum - 1].m_lapTimeInMS;
+        cache[`car-bestlap-${history.m_carIdx}`] = history.m_lapHistoryData[history.m_bestLapTimeLapNum - 1];
+    }
 
     let completedLaps = history.m_lapHistoryData.filter(l => l.m_sector3TimeInMS);
 
@@ -1048,6 +1075,7 @@ client.on(PACKETS.lapData, (lapData) => {
             currentLapNum: car.m_currentLapNum,
             currentLapTime: msToHMS(car.m_currentLapTimeInMS),
             bestLapTime: msToHMS(best || 0),
+            bestLap: cache[`car-bestlap-${i}`],
             lastLapTime: msToHMS(car.m_lastLapTimeInMS || 0),
             comparisonLap: cache[`car-comparison-lap-${i}`],
             inSector: car.m_sector + 1,
